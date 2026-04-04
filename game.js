@@ -412,23 +412,23 @@ function updateAmbientBlockFX(dt){
     // Fire/Lava/TNT — flames float out from top of orb
     if((b.type==='F'||b.type==='L'||b.type==='T')&&Math.random()<0.28){
       var p=poolAlloc();
-      var spread=(Math.random()-0.5)*oR*1.2;
+      var spread=(Math.random()-0.5)*oR*1.4;
       p.x=b.cx+spread;
-      p.y=b.cy-oR*(0.55+Math.random()*0.45);
-      p.vx=spread*0.8+(Math.random()-0.5)*22;
-      p.vy=-(45+Math.random()*75);
+      p.y=b.cy-oR*(0.8+Math.random()*0.3);
+      p.vx=spread*0.6+(Math.random()-0.5)*28;
+      p.vy=-(80+Math.random()*120);
       p.color=['#ff6600','#ff8800','#ffdd00','#ff4400','#ff9900'][Math.floor(Math.random()*5)];
-      p.alpha=1;p.radius=2.5+Math.random()*3.5;p.life=0.5+Math.random()*0.5;p.maxLife=p.life;p.gravity=25;p.type='fire';
+      p.alpha=1;p.radius=3+Math.random()*4;p.life=0.6+Math.random()*0.6;p.maxLife=p.life;p.gravity=15;p.type='fire';
     }
     // Ice — snowflakes drift down slowly
     if(b.type==='I'&&Math.random()<0.18){
       var p2=poolAlloc();
-      p2.x=b.cx+(Math.random()-0.5)*oR*1.2;
-      p2.y=b.cy-oR*(0.4+Math.random()*0.5);
-      p2.vx=(Math.random()-0.5)*14;
-      p2.vy=18+Math.random()*28;
+      p2.x=b.cx+(Math.random()-0.5)*oR*1.4;
+      p2.y=b.cy-oR*(0.7+Math.random()*0.4);
+      p2.vx=(Math.random()-0.5)*18;
+      p2.vy=25+Math.random()*45;
       p2.color=['#aaddff','#cceeff','#ffffff','#ddeeff'][Math.floor(Math.random()*4)];
-      p2.alpha=1;p2.radius=1.5+Math.random()*2;p2.life=0.7+Math.random()*0.5;p2.maxLife=p2.life;p2.gravity=3;p2.type='spark';
+      p2.alpha=1;p2.radius=2+Math.random()*2.5;p2.life=0.9+Math.random()*0.6;p2.maxLife=p2.life;p2.gravity=2;p2.type='spark';
     }
   }
 }
@@ -1016,7 +1016,23 @@ function gameLoop(ts){
   updateDebugOverlay(ts);updateDebugBot();updateParticles(dt);if(!gameState.running||gameState.paused){render();return}
   updatePaddle(dt);updateEffects(dt);updatePowerups(dt);updateLasers(dt);updateBackground(dt);if(glReady)updateBlockWaves(gameState.blocks,dt);
   if(gameState.activeEffects.laser>0){gameState._laserTimer=(gameState._laserTimer||0)-dt;if(gameState._laserTimer<=0){fireLasers();gameState._laserTimer=0.4}}
-  for(var i=0;i<gameState.balls.length;i++){var b=gameState.balls[i];if(b.stuck||!b.alive){updateBallStuck(b);b.trail=[];if(b.stuck&&settings.visualFX)spawnTrailParticle(b.x,b.y);continue}
+  for(var i=0;i<gameState.balls.length;i++){var b=gameState.balls[i];if(b.stuck||!b.alive){updateBallStuck(b);b.trail=[];
+      if(b.stuck&&settings.visualFX&&Math.random()<0.55){
+        var _tc=TRAIL_COLORS[settings.ballTrail]||TRAIL_COLORS.lava;
+        var _sp=poolAlloc();if(_sp){
+          var _br=b.radius||getBallRadius();
+          _sp.x=b.x+(Math.random()-0.5)*_br*1.2;
+          _sp.y=b.y-_br*(0.2+Math.random()*0.5);
+          _sp.vx=(Math.random()-0.5)*32;
+          _sp.vy=-(55+Math.random()*95);
+          if(settings.ballTrail==='plasma')_sp.color=['#cc44ff','#8800ff','#ff44cc','#aa00ff'][Math.floor(Math.random()*4)];
+          else if(settings.ballTrail==='ice')_sp.color=['#aaddff','#66bbff','#ffffff','#cceeff'][Math.floor(Math.random()*4)];
+          else _sp.color=[_tc.c1,_tc.c2,'#ffaa00','#ff6600'][Math.floor(Math.random()*4)];
+          _sp.alpha=1;_sp.radius=2+Math.random()*3;_sp.life=0.45+Math.random()*0.4;_sp.maxLife=_sp.life;
+          _sp.gravity=settings.ballTrail==='ice'?35:120;_sp.type='fire';
+        }
+      }
+      continue}
     b.trail.push({x:b.x,y:b.y,age:0});var _mxT=settings.trailLength==='short'?5:settings.trailLength==='long'?22:12,_tSp=settings.trailLength==='short'?7:settings.trailLength==='long'?2.5:4;if(b.trail.length>_mxT)b.trail.shift();b.trail.forEach(function(tr){tr.age+=dt*_tSp});b.trail=b.trail.filter(function(tr){return tr.age<1});
     if(settings.visualFX){var bspd=Math.sqrt(b.vx*b.vx+b.vy*b.vy);if(bspd>60&&Math.random()<dt*28)spawnTrailParticle(b.x+(Math.random()-0.5)*3,b.y+(Math.random()-0.5)*3)}}
   updateAmbientBlockFX(dt);
