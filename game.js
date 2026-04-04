@@ -4,10 +4,10 @@
 // ============================================================
 
 var CFG = {
-  MAX_LIVES:5, INIT_LIVES:3, BALL_RADIUS:8,
+  MAX_LIVES:5, INIT_LIVES:3, BALL_RADIUS:16,
   BALL_SPEED_NORMAL:340, BALL_SPEED_EASY:260, BALL_SPEED_HARD:420,
   PADDLE_W_NORMAL:104, PADDLE_H:14, PADDLE_FRICTION:0.22,
-  BLOCK_COLS:13, BLOCK_ROWS_MAX:10, BLOCK_PAD:4, BLOCK_CORNER:5,
+  BLOCK_COLS:13, BLOCK_ROWS_MAX:10, BLOCK_PAD:2, BLOCK_CORNER:5,
   BLOCK_TOP_OFFSET:72, BLOCK_AREA_H_FRAC:0.48, PADDLE_Y_FRAC:0.87,
   MAX_PARTICLES:2000, COMBO_WINDOW:1500, POWERUP_FALL_SPEED:90,
   STORAGE_KEY:'orb-arkanoid-v1', STORAGE_LB_KEY:'orb-arkanoid-lb-v1',
@@ -53,8 +53,8 @@ var LEVELS = [
 
 
 var STRINGS = {
-  en:{play:'PLAY',settings:'SETTINGS',leaderboard:'LEADERBOARD',back:'BACK',resume:'RESUME',restart:'RESTART',quit:'QUIT',retry:'RETRY',next_level:'NEXT LEVEL',main_menu:'MAIN MENU',paused:'PAUSED',game_over:'GAME OVER',victory:'VICTORY!',score:'SCORE',level:'LEVEL',name:'NAME',level_short:'LVL',music:'MUSIC',sound:'SOUND',visual:'VISUAL FX',difficulty:'DIFFICULTY',language:'LANGUAGE',on:'ON',off:'OFF',easy:'EASY',normal:'NORMAL',hard:'HARD',tagline:'Break the Orbs',combo:'COMBO',press_start:'Press SPACE or tap to launch',level_clear:'LEVEL CLEAR!',all_clear:'ALL LEVELS CLEARED!',no_scores:'No scores yet. Play to get on the board!',confirm:'OK',enter_name:'ENTER YOUR NAME',show_fps:'SHOW FPS',level_select:'LEVEL SELECT'},
-  ru:{play:'\u0418\u0413\u0420\u0410\u0422\u042c',settings:'\u041d\u0410\u0421\u0422\u0420\u041e\u0419\u041a\u0418',leaderboard:'\u0420\u0415\u041a\u041e\u0420\u0414\u042b',back:'\u041d\u0410\u0417\u0410\u0414',resume:'\u041f\u0420\u041e\u0414\u041e\u041b\u0416\u0418\u0422\u042c',restart:'\u0421\u041d\u0410\u0427\u0410\u041b\u0410',quit:'\u0412\u042b\u0419\u0422\u0418',retry:'\u0415\u0429\u0401 \u0420\u0410\u0417',next_level:'\u0421\u041b\u0415\u0414\u0423\u042e\u0429\u0418\u0419',main_menu:'\u041c\u0415\u041d\u042e',paused:'\u041f\u0410\u0423\u0417\u0410',game_over:'\u0418\u0413\u0420\u0410 \u041e\u041a\u041e\u041d\u0427\u0415\u041d\u0410',victory:'\u041f\u041e\u0411\u0415\u0414\u0410!',score:'\u0421\u0427\u0401\u0422',level:'\u0423\u0420\u041e\u0412\u0415\u041d\u042c',name:'\u0418\u041c\u042f',level_short:'\u0423\u0420',music:'\u041c\u0423\u0417\u042b\u041a\u0410',sound:'\u0417\u0412\u0423\u041a\u0418',visual:'\u042d\u0424\u0424\u0415\u041a\u0422\u042b',difficulty:'\u0421\u041b\u041e\u0416\u041d\u041e\u0421\u0422\u042c',language:'\u042f\u0417\u042b\u041a',on:'\u0412\u041a\u041b',off:'\u0412\u042b\u041a\u041b',easy:'\u041b\u0415\u0413\u041a\u041e',normal:'\u041d\u041e\u0420\u041c\u0410\u041b',hard:'\u0421\u041b\u041e\u0416\u041d\u041e',tagline:'\u0420\u0430\u0437\u0431\u0438\u0432\u0430\u0439 \u043e\u0440\u0431\u044b',combo:'\u041a\u041e\u041c\u0411\u041e',press_start:'\u041f\u0440\u043e\u0431\u0435\u043b \u0438\u043b\u0438 \u0442\u0430\u043f \u0434\u043b\u044f \u0437\u0430\u043f\u0443\u0441\u043a\u0430',level_clear:'\u0423\u0420\u041e\u0412\u0415\u041d\u042c \u041f\u0420\u041e\u0419\u0414\u0415\u041d!',all_clear:'\u0412\u0421\u0415 \u0423\u0420\u041e\u0412\u041d\u0418 \u041f\u0420\u041e\u0419\u0414\u0415\u041d\u042b!',no_scores:'\u0420\u0435\u043a\u043e\u0440\u0434\u043e\u0432 \u043f\u043e\u043a\u0430 \u043d\u0435\u0442. \u0421\u044b\u0433\u0440\u0430\u0439\u0442\u0435!',confirm:'\u041e\u041a',enter_name:'\u0412\u0412\u0415\u0414\u0418\u0422\u0415 \u0418\u041c\u042f',show_fps:'FPS',level_select:'\u0412\u042b\u0411\u041e\u0420 \u0423\u0420\u041e\u0412\u041d\u042f'}
+  en:{play:'PLAY',settings:'SETTINGS',leaderboard:'LEADERBOARD',back:'BACK',resume:'RESUME',restart:'RESTART',quit:'QUIT',retry:'RETRY',next_level:'NEXT LEVEL',main_menu:'MAIN MENU',paused:'PAUSED',game_over:'GAME OVER',victory:'VICTORY!',score:'SCORE',level:'LEVEL',name:'NAME',level_short:'LVL',music:'MUSIC',sound:'SOUND',visual:'VISUAL FX',difficulty:'DIFFICULTY',language:'LANGUAGE',on:'ON',off:'OFF',easy:'EASY',normal:'NORMAL',hard:'HARD',tagline:'Break the Orbs',combo:'COMBO',press_start:'Press SPACE or tap to launch',level_clear:'LEVEL CLEAR!',all_clear:'ALL LEVELS CLEARED!',no_scores:'No scores yet. Play to get on the board!',confirm:'OK',enter_name:'ENTER YOUR NAME',show_fps:'DEBUG',level_select:'LEVEL SELECT',orb_size:'ORB SIZE',small:'S',powerups_title:'POWER-UPS',expand_pu:'Wider paddle (+50%)',shrink_pu:'Narrower paddle (-30%)',fireball_pu:'Ball breaks through blocks',multi_pu:'+2 extra balls',sticky_pu:'Ball sticks to paddle',laser_pu:'Paddle shoots lasers',life_pu:'+1 extra life',slow_pu:'Slower ball (-30%)',level_names:['Ignition','Frost Bite','Fortress Wall','Gold Rush','TNT Minefield','Ice Palace','Lava Forge','Checkered','The Gauntlet','Rainbow Road','Earth Quake','Twin Fortress','Inferno Core','The Labyrinth','Final Eruption']},
+  ru:{play:'\u0418\u0413\u0420\u0410\u0422\u042c',settings:'\u041d\u0410\u0421\u0422\u0420\u041e\u0419\u041a\u0418',leaderboard:'\u0420\u0415\u041a\u041e\u0420\u0414\u042b',back:'\u041d\u0410\u0417\u0410\u0414',resume:'\u041f\u0420\u041e\u0414\u041e\u041b\u0416\u0418\u0422\u042c',restart:'\u0421\u041d\u0410\u0427\u0410\u041b\u0410',quit:'\u0412\u042b\u0419\u0422\u0418',retry:'\u0415\u0429\u0401 \u0420\u0410\u0417',next_level:'\u0421\u041b\u0415\u0414\u0423\u042e\u0429\u0418\u0419',main_menu:'\u041c\u0415\u041d\u042e',paused:'\u041f\u0410\u0423\u0417\u0410',game_over:'\u0418\u0413\u0420\u0410 \u041e\u041a\u041e\u041d\u0427\u0415\u041d\u0410',victory:'\u041f\u041e\u0411\u0415\u0414\u0410!',score:'\u0421\u0427\u0401\u0422',level:'\u0423\u0420\u041e\u0412\u0415\u041d\u042c',name:'\u0418\u041c\u042f',level_short:'\u0423\u0420',music:'\u041c\u0423\u0417\u042b\u041a\u0410',sound:'\u0417\u0412\u0423\u041a\u0418',visual:'\u042d\u0424\u0424\u0415\u041a\u0422\u042b',difficulty:'\u0421\u041b\u041e\u0416\u041d\u041e\u0421\u0422\u042c',language:'\u042f\u0417\u042b\u041a',on:'\u0412\u041a\u041b',off:'\u0412\u042b\u041a\u041b',easy:'\u041b\u0415\u0413\u041a\u041e',normal:'\u041d\u041e\u0420\u041c\u0410\u041b',hard:'\u0421\u041b\u041e\u0416\u041d\u041e',tagline:'\u0420\u0430\u0437\u0431\u0438\u0432\u0430\u0439 \u043e\u0440\u0431\u044b',combo:'\u041a\u041e\u041c\u0411\u041e',press_start:'\u041f\u0440\u043e\u0431\u0435\u043b \u0438\u043b\u0438 \u0442\u0430\u043f \u0434\u043b\u044f \u0437\u0430\u043f\u0443\u0441\u043a\u0430',level_clear:'\u0423\u0420\u041e\u0412\u0415\u041d\u042c \u041f\u0420\u041e\u0419\u0414\u0415\u041d!',all_clear:'\u0412\u0421\u0415 \u0423\u0420\u041e\u0412\u041d\u0418 \u041f\u0420\u041e\u0419\u0414\u0415\u041d\u042b!',no_scores:'\u0420\u0435\u043a\u043e\u0440\u0434\u043e\u0432 \u043f\u043e\u043a\u0430 \u043d\u0435\u0442. \u0421\u044b\u0433\u0440\u0430\u0439\u0442\u0435!',confirm:'\u041e\u041a',enter_name:'\u0412\u0412\u0415\u0414\u0418\u0422\u0415 \u0418\u041c\u042f',show_fps:'\u041e\u0422\u041b\u0410\u0414\u041a\u0410',level_select:'\u0412\u042b\u0411\u041e\u0420 \u0423\u0420\u041e\u0412\u041d\u042f',orb_size:'\u0420\u0410\u0417\u041c\u0415\u0420 \u041e\u0420\u0411\u0410',small:'S',powerups_title:'\u0423\u041b\u0423\u0427\u0428\u0415\u041d\u0418\u042f',expand_pu:'\u0428\u0438\u0440\u0435 \u043f\u043b\u0430\u0442\u0444\u043e\u0440\u043c\u0430 (+50%)',shrink_pu:'\u0423\u0436\u0435 \u043f\u043b\u0430\u0442\u0444\u043e\u0440\u043c\u0430 (-30%)',fireball_pu:'\u041c\u044f\u0447 \u043f\u0440\u043e\u0431\u0438\u0432\u0430\u0435\u0442 \u0431\u043b\u043e\u043a\u0438',multi_pu:'+2 \u0434\u043e\u043f. \u043c\u044f\u0447\u0430',sticky_pu:'\u041c\u044f\u0447 \u043f\u0440\u0438\u043b\u0438\u043f\u0430\u0435\u0442',laser_pu:'\u041f\u043b\u0430\u0442\u0444\u043e\u0440\u043c\u0430 \u0441\u0442\u0440\u0435\u043b\u044f\u0435\u0442',life_pu:'+1 \u0436\u0438\u0437\u043d\u044c',slow_pu:'\u041c\u0435\u0434\u043b\u0435\u043d\u043d\u0435\u0435 (-30%)',level_names:['\u0417\u0430\u0436\u0438\u0433\u0430\u043d\u0438\u0435','\u041c\u043e\u0440\u043e\u0437\u043d\u044b\u0439 \u0443\u043a\u0443\u0441','\u0421\u0442\u0435\u043d\u0430 \u043a\u0440\u0435\u043f\u043e\u0441\u0442\u0438','\u0417\u043e\u043b\u043e\u0442\u0430\u044f \u043b\u0438\u0445\u043e\u0440\u0430\u0434\u043a\u0430','\u041c\u0438\u043d\u043d\u043e\u0435 \u043f\u043e\u043b\u0435','\u041b\u0435\u0434\u044f\u043d\u043e\u0439 \u0434\u0432\u043e\u0440\u0435\u0446','\u041b\u0430\u0432\u043e\u0432\u0430\u044f \u043a\u0443\u0437\u043d\u044f','\u0428\u0430\u0445\u043c\u0430\u0442\u043d\u0430\u044f \u0434\u043e\u0441\u043a\u0430','\u0418\u0441\u043f\u044b\u0442\u0430\u043d\u0438\u0435','\u0420\u0430\u0434\u0443\u0436\u043d\u0430\u044f \u0434\u043e\u0440\u043e\u0433\u0430','\u0417\u0435\u043c\u043b\u0435\u0442\u0440\u044f\u0441\u0435\u043d\u0438\u0435','\u0414\u0432\u043e\u0439\u043d\u0430\u044f \u043a\u0440\u0435\u043f\u043e\u0441\u0442\u044c','\u042f\u0434\u0440\u043e \u0438\u043d\u0444\u0435\u0440\u043d\u043e','\u041b\u0430\u0431\u0438\u0440\u0438\u043d\u0442','\u0424\u0438\u043d\u0430\u043b\u044c\u043d\u043e\u0435 \u0438\u0437\u0432\u0435\u0440\u0436\u0435\u043d\u0438\u0435']}
 };
 
 function t(key){var lang=settings?settings.language:'en';return(STRINGS[lang]&&STRINGS[lang][key])||STRINGS.en[key]||key}
@@ -64,7 +64,7 @@ function applyI18n(){
   document.querySelectorAll('.toggle-btn').forEach(function(btn){btn.textContent=btn.classList.contains('active')?t('on'):t('off')});
 }
 
-var settings={language:'en',musicOn:true,sfxOn:true,visualFX:true,difficulty:'normal',debug:false,maxLevel:0};
+var settings={language:'en',musicOn:true,sfxOn:true,visualFX:true,difficulty:'normal',debug:false,maxLevel:0,ballSize:'normal'};
 
 function loadSettings(){try{var r=localStorage.getItem(CFG.STORAGE_KEY+'-settings');if(r)Object.assign(settings,JSON.parse(r))}catch(e){}}
 function saveSettings(){try{localStorage.setItem(CFG.STORAGE_KEY+'-settings',JSON.stringify(settings))}catch(e){}}
@@ -78,6 +78,8 @@ function applySettingsUI(){
   ['easy','normal','hard'].forEach(function(d){var e=document.getElementById('diff-'+d);if(e)e.classList.toggle('active',settings.difficulty===d)});
   ['en','ru'].forEach(function(l){var e=document.getElementById('lang-'+l);if(e)e.classList.toggle('active',settings.language===l)});
   var mb=document.getElementById('btn-mute');if(mb)mb.textContent=(settings.sfxOn||settings.musicOn)?'\uD83D\uDD0A':'\uD83D\uDD07';
+  ['small','normal','large'].forEach(function(s){var e=document.getElementById('size-'+s);if(e)e.classList.toggle('active',settings.ballSize===s)});
+  var dbm=document.getElementById('btn-debug-main');if(dbm)dbm.textContent='DEBUG: '+(settings.debug?'ON':'OFF');
 }
 
 var gameState={running:false,paused:false,lives:CFG.INIT_LIVES,score:0,combo:0,comboTimer:0,level:0,totalScore:0,levelStartScore:0,blocks:[],balls:[],paddle:null,particles:[],powerups:[],lasers:[],activeEffects:{expand:0,shrink:0,sticky:0,laser:0,slow:0,fireball:0},shake:0,flashAlpha:0,flashColor:'#ffffff',_nameCallback:null,debugMode:false,botEnabled:false};
@@ -108,11 +110,23 @@ function renderLevelSelect(){
     var lvl=LEVELS[idx],unlocked=(idx<=maxLvl);
     var btn=document.createElement('button');
     btn.className='ls-btn'+(unlocked?'':' locked');
-    btn.innerHTML='<span class="ls-num">'+(idx+1)+'</span><span class="ls-name">'+lvl.name+'</span>';
+    var lNames=t('level_names');var lName=(lNames&&lNames[idx])||lvl.name;
+    btn.innerHTML='<span class="ls-num">'+(idx+1)+'</span><span class="ls-name">'+lName+'</span>';
     btn.disabled=!unlocked;
     if(unlocked)btn.addEventListener('click',function(){ensureAudio();showScreen('screen-game');startLevel(idx);ensureLoop()});
     grid.appendChild(btn);
   })(i)}
+}
+
+function renderPowerupInfo(){
+  var list=document.getElementById('powerup-list');if(!list)return;list.innerHTML='';
+  Object.keys(POWERUP_DEFS).forEach(function(k){
+    var def=POWERUP_DEFS[k];var desc=t(def.label)||k;
+    var row=document.createElement('div');row.style.cssText='display:flex;align-items:center;gap:12px';
+    row.innerHTML='<div style="min-width:36px;height:36px;border-radius:50%;background:'+def.color+'44;border:2px solid '+def.color+';display:flex;align-items:center;justify-content:center;font:bold 11px sans-serif;color:#fff">'+def.icon+'</div>'
+      +'<div><div style="font-weight:700;color:'+def.color+';font-size:13px;text-transform:uppercase">'+k+'</div><div style="font-size:12px;color:var(--text2)">'+desc+'</div></div>';
+    list.appendChild(row);
+  });
 }
 
 function promptPlayerName(callback){
@@ -144,7 +158,7 @@ function recalcLayout(){
   // Cap block height so BLOCK_ROWS_MAX rows always fit between HUD and paddle (60px launch buffer)
   var availH=paddleY-CFG.BLOCK_TOP_OFFSET-60;
   var bhMax=Math.floor((availH-pad*(CFG.BLOCK_ROWS_MAX+1))/CFG.BLOCK_ROWS_MAX);
-  var bh=Math.max(14,Math.min(Math.floor(bw*0.46),Math.max(14,bhMax)));
+  var bh=Math.max(14,Math.min(Math.floor(bw*0.72),Math.max(14,bhMax)));
   var gw=bw*cols+pad*(cols+1);
   layout.blockW=bw;layout.blockH=bh;layout.gridX=Math.floor((CW-gw)/2);layout.gridY=CFG.BLOCK_TOP_OFFSET;layout.gridW=gw;layout.cols=cols;layout.paddleY=paddleY;
 }
@@ -153,12 +167,13 @@ function parseLevel(levelDef){
   var blocks=[],grid=levelDef.grid,cols=layout.cols,pad=CFG.BLOCK_PAD;
   for(var row=0;row<grid.length;row++){var line=grid[row];for(var col=0;col<cols&&col<line.length;col++){var ch=line[col];if(ch==='.'||ch===' ')continue;var def=BLOCK_DEFS[ch];if(!def)continue;
     var bx=layout.gridX+pad+col*(layout.blockW+pad),by=layout.gridY+pad+row*(layout.blockH+pad);
-    blocks.push({x:bx,y:by,w:layout.blockW,h:layout.blockH,type:ch,hp:def.hp,maxHp:def.hp,pts:def.pts,def:def,hitAnim:0,alive:true,row:row,col:col,wH:new Float32Array(6),wV:new Float32Array(6)})}}
+    var orbD=Math.max(2,Math.min(layout.blockW,layout.blockH)-2);
+    blocks.push({x:bx,y:by,w:layout.blockW,h:layout.blockH,cx:bx+layout.blockW/2,cy:by+layout.blockH/2,orbR:orbD/2,type:ch,hp:def.hp,maxHp:def.hp,pts:def.pts,def:def,hitAnim:0,alive:true,row:row,col:col,wH:new Float32Array(6),wV:new Float32Array(6)})}}
   return blocks;
 }
 
 
-function makeBall(x,y){return{x:x||CW/2,y:y||(layout.paddleY-CFG.BALL_RADIUS-2),vx:0,vy:0,radius:CFG.BALL_RADIUS,stuck:true,fireball:false,trail:[],alive:true}}
+function makeBall(x,y){var r=getBallRadius();return{x:x||CW/2,y:y||(layout.paddleY-r-2),vx:0,vy:0,radius:r,stuck:true,fireball:false,trail:[],alive:true}}
 function getBallSpeed(){var d=DIFFICULTY[settings.difficulty]||DIFFICULTY.normal;var lvlBonus=1+(gameState.level/(LEVELS.length-1||1))*0.30;return CFG.BALL_SPEED_NORMAL*d.speed*lvlBonus}
 function launchBall(ball){if(!ball.stuck)return;var a=(Math.random()*60-30)*Math.PI/180;var s=getBallSpeed();ball.vx=Math.sin(a)*s;ball.vy=-Math.cos(a)*s;ball.stuck=false}
 function updateBallStuck(ball){if(!ball||!ball.stuck)return;var p=gameState.paddle;ball.x=p.x;ball.y=p.y-ball.radius-1}
@@ -173,6 +188,8 @@ function updatePaddle(dt){
   if(eff.expand>0)tw=baseW*1.5;if(eff.shrink>0)tw=baseW*0.7;p.width+=(tw-p.width)*0.15;
 }
 
+function circleCircleCollision(cx1,cy1,r1,cx2,cy2,r2){var dx=cx1-cx2,dy=cy1-cy2,d2=dx*dx+dy*dy,rr=r1+r2;if(d2>=rr*rr)return{hit:false};var d=Math.sqrt(d2)||0.0001;return{hit:true,nx:dx/d,ny:dy/d,depth:rr-d}}
+function getBallRadius(){var sizes={small:12,normal:16,large:22};return sizes[settings.ballSize]||16}
 function circleRectCollision(cx,cy,cr,rx,ry,rw,rh){
   var closestX=Math.max(rx,Math.min(cx,rx+rw)),closestY=Math.max(ry,Math.min(cy,ry+rh));
   var dx=cx-closestX,dy=cy-closestY,d2=dx*dx+dy*dy;
@@ -215,7 +232,7 @@ function checkBallPaddle(ball){
 function checkBallBlocks(ball){
   var hitAny=false,rv;
   for(var i=0;i<gameState.blocks.length;i++){var b=gameState.blocks[i];if(!b.alive)continue;
-    var c=circleRectCollision(ball.x,ball.y,ball.radius,b.x,b.y,b.w,b.h);if(!c.hit)continue;
+    var c=circleCircleCollision(ball.x,ball.y,ball.radius,b.cx,b.cy,b.orbR);if(!c.hit)continue;
     hitAny=true;
     if(b.type==='S'){rv=reflectVelocity(ball.vx,ball.vy,c.nx,c.ny);ball.vx=rv.vx;ball.vy=rv.vy;enforceMinVY(ball);ball.x+=c.nx*(c.depth+0.5);ball.y+=c.ny*(c.depth+0.5);b.hitAnim=1;playSFX('break_steel');spawnImpactParticles(ball.x,ball.y,'spark',3);break}
     if(!ball.fireball){rv=reflectVelocity(ball.vx,ball.vy,c.nx,c.ny);ball.vx=rv.vx;ball.vy=rv.vy;enforceMinVY(ball);ball.x+=c.nx*(c.depth+0.5);ball.y+=c.ny*(c.depth+0.5)}
@@ -289,10 +306,10 @@ function onBlockDestroyed(block,ball){
 }
 
 var POWERUP_DEFS={
-  expand:{color:'#00ff88',icon:'\u2b1b',duration:15000},shrink:{color:'#ff4488',icon:'\u2b1c',duration:10000},
-  fireball:{color:'#ff6600',icon:'\uD83D\uDD25',duration:8000},multiball:{color:'#ffff00',icon:'\u26aa',duration:0},
-  sticky:{color:'#8844ff',icon:'\uD83D\uDFE3',duration:12000},laser:{color:'#ff0044',icon:'\uD83D\uDD34',duration:10000},
-  life:{color:'#ff2222',icon:'\u2764',duration:0},slow:{color:'#44aaff',icon:'\uD83D\uDD35',duration:10000}
+  expand:{color:'#00ff88',icon:'EXP',label:'expand_pu',duration:15000},shrink:{color:'#ff4488',icon:'SHR',label:'shrink_pu',duration:10000},
+  fireball:{color:'#ff6600',icon:'FIR',label:'fireball_pu',duration:8000},multiball:{color:'#ffff00',icon:'x3',label:'multi_pu',duration:0},
+  sticky:{color:'#8844ff',icon:'STK',label:'sticky_pu',duration:12000},laser:{color:'#ff0044',icon:'LAS',label:'laser_pu',duration:10000},
+  life:{color:'#ff2222',icon:'+1',label:'life_pu',duration:0},slow:{color:'#44aaff',icon:'SLO',label:'slow_pu',duration:10000}
 };
 var POWERUP_TYPES=Object.keys(POWERUP_DEFS);
 var BLOCK_ICONS={F:'FIRE',I:'ICE',W:'AQUA',E:'ROCK',L:'LAVA',S:'IRON',G:'GOLD',T:'TNT',R:'PRISM'};
@@ -300,7 +317,7 @@ var BLOCK_ICONS={F:'FIRE',I:'ICE',W:'AQUA',E:'ROCK',L:'LAVA',S:'IRON',G:'GOLD',T
 function spawnPowerup(x,y,type){
   if(type==='random')type=POWERUP_TYPES[Math.floor(Math.random()*POWERUP_TYPES.length)];
   var def=POWERUP_DEFS[type];if(!def)return;
-  gameState.powerups.push({x:x,y:y,type:type,def:def,w:28,h:28,alive:true});
+  gameState.powerups.push({x:x,y:y,type:type,def:def,w:36,h:36,alive:true});
 }
 
 function updatePowerups(dt){
@@ -446,7 +463,8 @@ function startLevel(idx){
   gameState.levelStartScore=gameState.score;gameState.paddle=makePaddle();
   var ball=makeBall();updateBallStuck(ball);gameState.balls.push(ball);updateHUD();
   var oN=document.getElementById('overlay-level-num'),oL=document.getElementById('overlay-level-name'),oH=document.getElementById('overlay-level-hint');
-  if(oN)oN.textContent=t('level')+' '+(idx+1)+' / '+LEVELS.length;if(oL)oL.textContent=lvl.name;if(oH)oH.textContent=t('press_start');
+  var lNames=t('level_names');var lName=(lNames&&lNames[idx])||lvl.name;
+  if(oN)oN.textContent=t('level')+' '+(idx+1)+' / '+LEVELS.length;if(oL)oL.textContent=lName;if(oH)oH.textContent=t('press_start');
   document.getElementById('overlay-victory').classList.remove('visible');document.getElementById('overlay-gameover').classList.remove('visible');
   document.getElementById('overlay-pause').classList.remove('visible');document.getElementById('overlay-level').classList.add('visible');
   gameState.running=false;
@@ -683,9 +701,9 @@ function glRenderBlocks(blocks,time){
   for(var i=0;i<blocks.length;i++){
     var b=blocks[i];if(!b.alive)continue;
     var tc=LIQUID_TYPES[b.type];if(!tc)continue;
-    var orbD=Math.min(b.w,b.h);var orbX=b.x+(b.w-orbD)*0.5;var orbY=b.y+(b.h-orbD)*0.5;
-    gl.uniform2f(glU.pos,orbX,orbY);gl.uniform2f(glU.size,orbD,orbD);
-    gl.uniform1f(glU.orbR,orbD*0.5);
+    var orbD=b.orbR*2;
+    gl.uniform2f(glU.pos,b.cx-b.orbR,b.cy-b.orbR);gl.uniform2f(glU.size,orbD,orbD);
+    gl.uniform1f(glU.orbR,b.orbR);
     var hpF=b.hp/b.maxHp;gl.uniform1f(glU.fill,tc.fill*hpF);
     gl.uniform1f(glU.amp,tc.amp);gl.uniform1f(glU.spd,tc.spd);gl.uniform1f(glU.time,time);
     // Rainbow hue cycle
@@ -791,7 +809,7 @@ function renderBall(ball){
   ctx.fillStyle='rgba(255,240,180,0.55)';ctx.beginPath();ctx.arc(ball.x-r*0.28,ball.y-r*0.28,r*0.38,0,Math.PI*2);ctx.fill();ctx.restore();
 }
 
-function renderPowerups(){for(var i=0;i<gameState.powerups.length;i++){var pu=gameState.powerups[i];if(!pu.alive)continue;var def=pu.def;ctx.save();ctx.shadowColor=def.color;ctx.shadowBlur=8;ctx.fillStyle=def.color+'33';ctx.strokeStyle=def.color;ctx.lineWidth=1.5;roundRect(ctx,pu.x-pu.w/2,pu.y-pu.h/2,pu.w,pu.h,6);ctx.fill();ctx.stroke();ctx.shadowBlur=0;ctx.globalAlpha=0.9;ctx.font='14px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(def.icon,pu.x,pu.y);ctx.restore()}}
+function renderPowerups(){for(var i=0;i<gameState.powerups.length;i++){var pu=gameState.powerups[i];if(!pu.alive)continue;var def=pu.def;var pr=18;ctx.save();ctx.shadowColor=def.color;ctx.shadowBlur=10;ctx.fillStyle=def.color+'44';ctx.strokeStyle=def.color;ctx.lineWidth=2;ctx.beginPath();ctx.arc(pu.x,pu.y,pr,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.shadowBlur=0;ctx.fillStyle='#fff';ctx.font='bold 11px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(def.icon,pu.x,pu.y);ctx.restore()}}
 function renderLasers(){for(var i=0;i<gameState.lasers.length;i++){var l=gameState.lasers[i];if(!l.alive)continue;ctx.save();ctx.shadowColor=l.color;ctx.shadowBlur=6;ctx.fillStyle=l.color;ctx.fillRect(l.x-l.w/2,l.y,l.w,l.h);ctx.restore()}}
 function renderFlash(){if(gameState.flashAlpha<=0)return;ctx.save();ctx.globalAlpha=gameState.flashAlpha*0.35;ctx.fillStyle=gameState.flashColor;ctx.fillRect(0,0,CW,CH);ctx.restore();gameState.flashAlpha*=0.82;if(gameState.flashAlpha<0.005)gameState.flashAlpha=0}
 
@@ -840,7 +858,7 @@ function moveBall(ball,dt){
 
 function renderDebugHitboxes(){
   ctx.save();ctx.globalAlpha=0.55;ctx.lineWidth=1;
-  ctx.strokeStyle='#00ff88';gameState.blocks.forEach(function(b){if(!b.alive)return;ctx.strokeRect(b.x,b.y,b.w,b.h)});
+  ctx.strokeStyle='#00ff88';gameState.blocks.forEach(function(b){if(!b.alive)return;ctx.beginPath();ctx.arc(b.cx,b.cy,b.orbR,0,Math.PI*2);ctx.stroke()});
   ctx.strokeStyle='#ff4444';gameState.balls.forEach(function(b){if(!b.alive&&!b.stuck)return;ctx.beginPath();ctx.arc(b.x,b.y,b.radius,0,Math.PI*2);ctx.stroke()});
   if(gameState.paddle){ctx.strokeStyle='#4488ff';var p=gameState.paddle;ctx.strokeRect(p.x-p.width/2,p.y-p.height/2,p.width,p.height)}
   ctx.strokeStyle='#ffff00';gameState.powerups.forEach(function(pu){if(!pu.alive)return;ctx.strokeRect(pu.x-pu.w/2,pu.y-pu.h/2,pu.w,pu.h)});
@@ -893,6 +911,10 @@ function initButtons(){
   document.getElementById('btn-levelselect').addEventListener('click',function(){renderLevelSelect();showScreen('screen-levelselect')});
   document.getElementById('btn-back-levelselect').addEventListener('click',function(){showScreen('screen-start')});
   document.getElementById('btn-back-settings').addEventListener('click',function(){saveSettings();showScreen('screen-start')});
+  document.getElementById('btn-debug-main').addEventListener('click',function(){settings.debug=!settings.debug;applyDebugMode();var db=document.getElementById('btn-debug-main');if(db)db.textContent='DEBUG: '+(settings.debug?'ON':'OFF')});
+  document.getElementById('btn-powerups-main').addEventListener('click',function(){renderPowerupInfo();showScreen('screen-powerups')});
+  document.getElementById('btn-back-powerups').addEventListener('click',function(){showScreen('screen-start')});
+  ['small','normal','large'].forEach(function(s){var el=document.getElementById('size-'+s);if(el)el.addEventListener('click',function(){settings.ballSize=s;applySettingsUI();saveSettings()})});
   document.getElementById('btn-music').addEventListener('click',function(){settings.musicOn=!settings.musicOn;applySettingsUI();saveSettings()});
   document.getElementById('btn-sfx').addEventListener('click',function(){settings.sfxOn=!settings.sfxOn;applySettingsUI();saveSettings()});
   document.getElementById('btn-visual').addEventListener('click',function(){settings.visualFX=!settings.visualFX;applySettingsUI();saveSettings()});
@@ -942,7 +964,7 @@ function runTests(){
   // 8: parseLevel
   (function(){recalcLayout();var bl=parseLevel(LEVELS[0]);assert('Level 1: has many blocks',bl.length>=100,'count:'+bl.length);assert('Level 1: all 9 types',['F','I','W','E','L','S','G','T','R'].every(function(k){return bl.some(function(b){return b.type===k})}));assert('Level 1: positions set',bl[0].x>0&&bl[0].y>0)})();
   // 9: makeBall
-  (function(){var b=makeBall(100,200);assert('Ball: starts stuck',b.stuck===true);assert('Ball: position',b.x===100&&b.y===200);assert('Ball: radius',b.radius===CFG.BALL_RADIUS);assert('Ball: alive',b.alive===true)})();
+  (function(){var b=makeBall(100,200);assert('Ball: starts stuck',b.stuck===true);assert('Ball: position',b.x===100&&b.y===200);assert('Ball: radius',b.radius===getBallRadius());assert('Ball: alive',b.alive===true)})();
   // 10: launchBall
   (function(){var b=makeBall(300,500);launchBall(b);assert('Launch: not stuck',!b.stuck);assert('Launch: vy<0',b.vy<0);var s=Math.sqrt(b.vx*b.vx+b.vy*b.vy);assert('Launch: speed matches',Math.abs(s-getBallSpeed())<2)})();
   // 11: paddle per difficulty
@@ -995,7 +1017,7 @@ function runTests(){
   // Phase 6: applyDebugMode function exists
   (function(){assert('Phase6: applyDebugMode',typeof applyDebugMode==='function')})();
   // Phase 6: level_select i18n
-  (function(){var sl=settings.language;settings.language='en';assert('Phase6: level_select EN',t('level_select')==='LEVEL SELECT');assert('Phase6: show_fps EN',t('show_fps')==='SHOW FPS');settings.language=sl})();
+  (function(){var sl=settings.language;settings.language='en';assert('Phase6: level_select EN',t('level_select')==='LEVEL SELECT');assert('Phase6: show_fps EN',t('show_fps')==='DEBUG');settings.language=sl})();
 
   // Phase 5: level speed scaling
   (function(){recalcLayout();var savedLvl=gameState.level;gameState.level=0;var s0=getBallSpeed();gameState.level=14;var s14=getBallSpeed();gameState.level=savedLvl;assert('Phase5: lvl14 faster than lvl0',s14>s0*1.25,'s14='+s14+' s0='+s0);assert('Phase5: speed scales ~30%',s14<s0*1.36,'s14='+s14)})();
@@ -1027,6 +1049,19 @@ function runTests(){
   (function(){recalcLayout();var bl=parseLevel(LEVELS[0]);assert('Phase7: Level1 all 9 types',['F','I','W','E','L','S','G','T','R'].every(function(k){return bl.some(function(b){return b.type===k})}))})();
   // Phase 7: dismissNameOverlay clears callback
   (function(){gameState._nameCallback=function(){};dismissNameOverlay();assert('Phase7: dismissNameOverlay clears cb',gameState._nameCallback===null)})();
+  // Phase 8: circleCircleCollision
+  (function(){var r=circleCircleCollision(50,50,10,60,50,10);assert('Phase8: CC hit',r.hit);assert('Phase8: CC normal',r.nx<0,'nx='+r.nx)})();
+  (function(){var r=circleCircleCollision(0,0,5,100,100,5);assert('Phase8: CC miss',!r.hit)})();
+  // Phase 8: getBallRadius
+  (function(){var sv=settings.ballSize;settings.ballSize='small';assert('Phase8: ballSize small',getBallRadius()===12);settings.ballSize='normal';assert('Phase8: ballSize normal',getBallRadius()===16);settings.ballSize='large';assert('Phase8: ballSize large',getBallRadius()===22);settings.ballSize=sv})();
+  // Phase 8: blocks have cx/cy/orbR
+  (function(){recalcLayout();var bl=parseLevel(LEVELS[0]);assert('Phase8: block has cx',typeof bl[0].cx==='number');assert('Phase8: block has cy',typeof bl[0].cy==='number');assert('Phase8: block has orbR',bl[0].orbR>0)})();
+  // Phase 8: level names i18n
+  (function(){var sl=settings.language;settings.language='ru';var names=t('level_names');assert('Phase8: RU level names',names&&names.length===15);settings.language='en';var enNames=t('level_names');assert('Phase8: EN level names',enNames&&enNames.length===15);settings.language=sl})();
+  // Phase 8: renderPowerupInfo exists
+  (function(){assert('Phase8: renderPowerupInfo',typeof renderPowerupInfo==='function')})();
+  // Phase 8: POWERUP_DEFS have labels
+  (function(){assert('Phase8: powerup labels',Object.keys(POWERUP_DEFS).every(function(k){return!!POWERUP_DEFS[k].label}))})();
   // Phase 7: mute icon valid surrogate pairs
   (function(){var muted='\uD83D\uDD07',loud='\uD83D\uDD0A';assert('Phase7: muted icon length 2',muted.length===2);assert('Phase7: loud icon length 2',loud.length===2)})();
 
@@ -1047,4 +1082,4 @@ document.addEventListener('DOMContentLoaded',function(){
   setTimeout(function(){recalcLayout();runTests()},100);
 });
 window.addEventListener('resize',resizeCanvas);
-window.OA={runTests:runTests,startGame:startGame,startLevel:startLevel,gameState:gameState,settings:settings,CFG:CFG,getBlocksInArea:getBlocksInArea,chainExplosion:chainExplosion,spawnShockwave:spawnShockwave,spawnDebrisParticles:spawnDebrisParticles,spawnSupernova:spawnSupernova,promptPlayerName:promptPlayerName,getBallSpeed:getBallSpeed,renderLevelSelect:renderLevelSelect,updateDebugBot:updateDebugBot,applyDebugMode:applyDebugMode,BLOCK_ICONS:BLOCK_ICONS,dismissNameOverlay:dismissNameOverlay,ensureLoop:ensureLoop};
+window.OA={runTests:runTests,startGame:startGame,startLevel:startLevel,gameState:gameState,settings:settings,CFG:CFG,getBlocksInArea:getBlocksInArea,chainExplosion:chainExplosion,spawnShockwave:spawnShockwave,spawnDebrisParticles:spawnDebrisParticles,spawnSupernova:spawnSupernova,promptPlayerName:promptPlayerName,getBallSpeed:getBallSpeed,getBallRadius:getBallRadius,renderLevelSelect:renderLevelSelect,renderPowerupInfo:renderPowerupInfo,updateDebugBot:updateDebugBot,applyDebugMode:applyDebugMode,BLOCK_ICONS:BLOCK_ICONS,dismissNameOverlay:dismissNameOverlay,ensureLoop:ensureLoop,circleCircleCollision:circleCircleCollision};
