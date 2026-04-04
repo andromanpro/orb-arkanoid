@@ -34,7 +34,7 @@ var BLOCK_DEFS = {
 
 
 var LEVELS = [
-  {name:'Ignition',     music:'inferno',bg:'fire',  grid:['.....FFF.....','....FFFFF....','...FFFFFFF...','..FFFFFFFFF..','..FFFFFFFFF..','...FFFFFFF...']},
+  {name:'Ignition',     music:'inferno',bg:'fire',  grid:['RRRRRRRRRRRRR','RFFFFFFFFFFFR','RFLLLLLLLLLFR','RFSTGGGGGTSFR','RFLGEIIIEGLFR','RFLGIWWWIGLFR','RFLGEIIIEGLFR','RFSTGGGGGTSFR','RFLLLLLLLLLFR','RRRRRRRRRRRRR']},
   {name:'Frost Bite',   music:'frost',  bg:'ice',   grid:['IIIIIIIIIIIII','I...........I','I.EEEEEEEEE.I','I.E.......E.I','I.EEEEEEEEE.I','IIIIIIIIIIIII']},
   {name:'Fortress Wall',music:'war',    bg:'dark',  grid:['SS.SSSSSSS.SS','S..SSSSSSS..S','...FFFFFFF...','FFFFFFFFFFF..','FFFFFFFFFFF..','FFFFFFFFFFF..']},
   {name:'Gold Rush',    music:'arcade', bg:'gold',  grid:['....GGGGG....','...GGGGGGG...','..GGGGGGGGG..','..GRGRGRGR...','...RRRRRRR...','....RRRRR....']},
@@ -77,9 +77,10 @@ function applySettingsUI(){
   var dbgBtn=document.getElementById('btn-debug');if(dbgBtn){dbgBtn.classList.toggle('active',settings.debug);dbgBtn.textContent=settings.debug?t('on'):t('off')}
   ['easy','normal','hard'].forEach(function(d){var e=document.getElementById('diff-'+d);if(e)e.classList.toggle('active',settings.difficulty===d)});
   ['en','ru'].forEach(function(l){var e=document.getElementById('lang-'+l);if(e)e.classList.toggle('active',settings.language===l)});
+  var mb=document.getElementById('btn-mute');if(mb)mb.textContent=(settings.sfxOn||settings.musicOn)?'\uD83D\uDD0A':'\uD83D\uDD07';
 }
 
-var gameState={running:false,paused:false,lives:CFG.INIT_LIVES,score:0,combo:0,comboTimer:0,level:0,totalScore:0,levelStartScore:0,blocks:[],balls:[],paddle:null,particles:[],powerups:[],lasers:[],activeEffects:{expand:0,shrink:0,sticky:0,laser:0,slow:0,fireball:0},shake:0,flashAlpha:0,flashColor:'#ffffff',_nameCallback:null,debugMode:false};
+var gameState={running:false,paused:false,lives:CFG.INIT_LIVES,score:0,combo:0,comboTimer:0,level:0,totalScore:0,levelStartScore:0,blocks:[],balls:[],paddle:null,particles:[],powerups:[],lasers:[],activeEffects:{expand:0,shrink:0,sticky:0,laser:0,slow:0,fireball:0},shake:0,flashAlpha:0,flashColor:'#ffffff',_nameCallback:null,debugMode:false,botEnabled:false};
 function applyDebugMode(){
   gameState.debugMode=settings.debug;
   document.body.classList.toggle('debug-mode',settings.debug);
@@ -109,7 +110,7 @@ function renderLevelSelect(){
     btn.className='ls-btn'+(unlocked?'':' locked');
     btn.innerHTML='<span class="ls-num">'+(idx+1)+'</span><span class="ls-name">'+lvl.name+'</span>';
     btn.disabled=!unlocked;
-    if(unlocked)btn.addEventListener('click',function(){ensureAudio();showScreen('screen-game');startLevel(idx)});
+    if(unlocked)btn.addEventListener('click',function(){ensureAudio();showScreen('screen-game');startLevel(idx);ensureLoop()});
     grid.appendChild(btn);
   })(i)}
 }
@@ -127,6 +128,8 @@ function submitPlayerName(){
   var name=(input?input.value||'':'').trim().toUpperCase().slice(0,10)||'ORB';
   if(gameState._nameCallback){gameState._nameCallback(name);gameState._nameCallback=null}
 }
+function dismissNameOverlay(){var noEl=document.getElementById('overlay-name');if(noEl)noEl.classList.remove('visible');gameState._nameCallback=null}
+function ensureLoop(){if(!animFrame){lastTime=performance.now();animFrame=requestAnimationFrame(gameLoop)}}
 
 var canvas,ctx,CW=0,CH=0;
 function initCanvas(){canvas=document.getElementById('game-canvas');ctx=canvas.getContext('2d');resizeCanvas()}
@@ -283,9 +286,9 @@ function onBlockDestroyed(block,ball){
 
 var POWERUP_DEFS={
   expand:{color:'#00ff88',icon:'\u2b1b',duration:15000},shrink:{color:'#ff4488',icon:'\u2b1c',duration:10000},
-  fireball:{color:'#ff6600',icon:'\U0001f525',duration:8000},multiball:{color:'#ffff00',icon:'\u26aa',duration:0},
-  sticky:{color:'#8844ff',icon:'\U0001f7e3',duration:12000},laser:{color:'#ff0044',icon:'\U0001f534',duration:10000},
-  life:{color:'#ff2222',icon:'\u2764',duration:0},slow:{color:'#44aaff',icon:'\U0001f535',duration:10000}
+  fireball:{color:'#ff6600',icon:'\uD83D\uDD25',duration:8000},multiball:{color:'#ffff00',icon:'\u26aa',duration:0},
+  sticky:{color:'#8844ff',icon:'\uD83D\uDFE3',duration:12000},laser:{color:'#ff0044',icon:'\uD83D\uDD34',duration:10000},
+  life:{color:'#ff2222',icon:'\u2764',duration:0},slow:{color:'#44aaff',icon:'\uD83D\uDD35',duration:10000}
 };
 var POWERUP_TYPES=Object.keys(POWERUP_DEFS);
 var BLOCK_ICONS={F:'FIRE',I:'ICE',W:'AQUA',E:'ROCK',L:'LAVA',S:'IRON',G:'GOLD',T:'TNT',R:'PRISM'};
@@ -431,7 +434,7 @@ function levelClear(){
 }
 
 function startLevel(idx){
-  if(idx>=LEVELS.length)idx=LEVELS.length-1;gameState.level=idx;var lvl=LEVELS[idx];
+  if(idx>=LEVELS.length)idx=LEVELS.length-1;gameState.level=idx;var lvl=LEVELS[idx];dismissNameOverlay();
   ensureAudio();musicStart(lvl.music||'inferno');musicSetIntensity(0);
   recalcLayout();gameState.blocks=parseLevel(lvl);gameState.balls=[];gameState.powerups=[];gameState.lasers=[];
   gameState.combo=0;gameState.comboTimer=0;gameState.shake=0;gameState.flashAlpha=0;
@@ -654,10 +657,10 @@ function updateDebugOverlay(now){
   var el=document.getElementById('debug-overlay');if(!el||!gameState.debugMode)return;
   var alive=particlePool.filter(function(p){return p._alive}).length;
   var blk=gameState.blocks.filter(function(b){return b.alive}).length;
-  el.textContent='Canvas2D | FPS:'+_fpsCurrent+' | P:'+alive+'/'+CFG.MAX_PARTICLES+' | Blk:'+blk+' | Balls:'+gameState.balls.length+' | Score:'+gameState.score+' | Lvl:'+(gameState.level+1)+' | Combo:'+gameState.combo+' | BOT:ON [/] prev/next level';
+  el.textContent='Canvas2D | FPS:'+_fpsCurrent+' | P:'+alive+'/'+CFG.MAX_PARTICLES+' | Blk:'+blk+' | Balls:'+gameState.balls.length+' | Score:'+gameState.score+' | Lvl:'+(gameState.level+1)+' | Combo:'+gameState.combo+' | BOT:'+(gameState.botEnabled?'ON':'OFF');
 }
 function updateDebugBot(){
-  if(!gameState.debugMode)return;
+  if(!gameState.debugMode||!gameState.botEnabled)return;
   var lo=document.getElementById('overlay-level');
   if(lo&&lo.classList.contains('visible')){dismissLevelOverlay();return}
   if(!gameState.running||gameState.paused)return;
@@ -746,17 +749,21 @@ function initButtons(){
   ['en','ru'].forEach(function(l){document.getElementById('lang-'+l).addEventListener('click',function(){settings.language=l;applyI18n();applySettingsUI();saveSettings()})});
   document.getElementById('btn-back-lb').addEventListener('click',function(){showScreen('screen-start')});
   document.getElementById('btn-pause').addEventListener('click',function(){togglePause()});
-  document.getElementById('btn-mute').addEventListener('click',function(){settings.sfxOn=!settings.sfxOn;settings.musicOn=!settings.musicOn;var b=document.getElementById('btn-mute');if(b)b.textContent=(settings.sfxOn||settings.musicOn)?'\U0001f50a':'\U0001f507';saveSettings()});
+  document.getElementById('btn-mute').addEventListener('click',function(){var willMute=settings.sfxOn||settings.musicOn;settings.sfxOn=!settings.sfxOn;settings.musicOn=!settings.musicOn;var b=document.getElementById('btn-mute');if(b)b.textContent=(settings.sfxOn||settings.musicOn)?'\uD83D\uDD0A':'\uD83D\uDD07';if(willMute){musicStop()}else{var lvl=LEVELS[gameState.level];if(lvl&&gameState.running&&!gameState.paused)musicStart(lvl.music||'inferno')}saveSettings()});
   document.getElementById('btn-resume').addEventListener('click',function(){togglePause()});
   document.getElementById('btn-restart').addEventListener('click',function(){document.getElementById('overlay-pause').classList.remove('visible');startGame()});
   document.getElementById('btn-quit').addEventListener('click',function(){document.getElementById('overlay-pause').classList.remove('visible');gameState.running=false;gameState.paused=false;showScreen('screen-start')});
   document.getElementById('btn-go-retry').addEventListener('click',function(){document.getElementById('overlay-gameover').classList.remove('visible');startGame()});
-  document.getElementById('btn-go-menu').addEventListener('click',function(){document.getElementById('overlay-gameover').classList.remove('visible');gameState.running=false;showScreen('screen-start')});
+  document.getElementById('btn-go-menu').addEventListener('click',function(){document.getElementById('overlay-gameover').classList.remove('visible');dismissNameOverlay();gameState.running=false;showScreen('screen-start')});
   document.getElementById('btn-vic-next').addEventListener('click',function(){document.getElementById('overlay-victory').classList.remove('visible');startLevel(gameState.level+1)});
-  document.getElementById('btn-vic-menu').addEventListener('click',function(){document.getElementById('overlay-victory').classList.remove('visible');gameState.running=false;showScreen('screen-start')});
+  document.getElementById('btn-vic-menu').addEventListener('click',function(){document.getElementById('overlay-victory').classList.remove('visible');dismissNameOverlay();gameState.running=false;showScreen('screen-start')});
   var nameOk=document.getElementById('btn-name-ok'),nameInput=document.getElementById('name-input');
   if(nameOk)nameOk.addEventListener('click',submitPlayerName);
   if(nameInput)nameInput.addEventListener('keydown',function(e){if(e.code==='Enter')submitPlayerName()});
+  var dbgBot=document.getElementById('dbg-bot'),dbgPrev=document.getElementById('dbg-prev'),dbgNext=document.getElementById('dbg-next');
+  if(dbgBot)dbgBot.addEventListener('click',function(){gameState.botEnabled=!gameState.botEnabled;dbgBot.textContent='BOT: '+(gameState.botEnabled?'ON':'OFF')});
+  if(dbgPrev)dbgPrev.addEventListener('click',function(){if(gameState.level>0){startLevel(gameState.level-1);ensureLoop()}});
+  if(dbgNext)dbgNext.addEventListener('click',function(){if(gameState.level<LEVELS.length-1){startLevel(gameState.level+1);ensureLoop()}});
 }
 
 // ============================================================
@@ -781,7 +788,7 @@ function runTests(){
   // 7: i18n
   (function(){var sl=settings.language;settings.language='en';assert('i18n EN score',t('score')==='SCORE',t('score'));assert('i18n EN play',t('play')==='PLAY');settings.language='ru';assert('i18n RU score',t('score')==='\u0421\u0427\u0401\u0422',t('score'));assert('i18n RU play',t('play')==='\u0418\u0413\u0420\u0410\u0422\u042c');assert('i18n missing key',t('xyz_missing')==='xyz_missing');settings.language=sl})();
   // 8: parseLevel
-  (function(){recalcLayout();var bl=parseLevel(LEVELS[0]);assert('Level 1: has blocks',bl.length>0);assert('Level 1: all Fire',bl.every(function(b){return b.type==='F'}));assert('Level 1: positions set',bl[0].x>0&&bl[0].y>0)})();
+  (function(){recalcLayout();var bl=parseLevel(LEVELS[0]);assert('Level 1: has many blocks',bl.length>=100,'count:'+bl.length);assert('Level 1: all 9 types',['F','I','W','E','L','S','G','T','R'].every(function(k){return bl.some(function(b){return b.type===k})}));assert('Level 1: positions set',bl[0].x>0&&bl[0].y>0)})();
   // 9: makeBall
   (function(){var b=makeBall(100,200);assert('Ball: starts stuck',b.stuck===true);assert('Ball: position',b.x===100&&b.y===200);assert('Ball: radius',b.radius===CFG.BALL_RADIUS);assert('Ball: alive',b.alive===true)})();
   // 10: launchBall
@@ -858,11 +865,24 @@ function runTests(){
   // Phase 4: updateDebugOverlay no crash
   (function(){try{updateDebugOverlay(1000);assert('Phase4: updateDebugOverlay no crash',true)}catch(e){assert('Phase4: updateDebugOverlay',false,e.message)}})();
 
+  // Phase 7: dismissNameOverlay function exists
+  (function(){assert('Phase7: dismissNameOverlay',typeof dismissNameOverlay==='function')})();
+  // Phase 7: ensureLoop function exists
+  (function(){assert('Phase7: ensureLoop',typeof ensureLoop==='function')})();
+  // Phase 7: botEnabled default false
+  (function(){assert('Phase7: botEnabled default',gameState.botEnabled===false)})();
+  // Phase 7: Level 1 has all 9 block types
+  (function(){recalcLayout();var bl=parseLevel(LEVELS[0]);assert('Phase7: Level1 all 9 types',['F','I','W','E','L','S','G','T','R'].every(function(k){return bl.some(function(b){return b.type===k})}))})();
+  // Phase 7: dismissNameOverlay clears callback
+  (function(){gameState._nameCallback=function(){};dismissNameOverlay();assert('Phase7: dismissNameOverlay clears cb',gameState._nameCallback===null)})();
+  // Phase 7: mute icon valid surrogate pairs
+  (function(){var muted='\uD83D\uDD07',loud='\uD83D\uDD0A';assert('Phase7: muted icon length 2',muted.length===2);assert('Phase7: loud icon length 2',loud.length===2)})();
+
   var pct=Math.round(passed/(passed+failed)*100);
   console.log('\n=== ORB ARKANOID TESTS ===');
   results.forEach(function(r){console.log((r.ok?'\u2705':'\u274c')+' '+r.name+(r.detail?' ['+r.detail+']':''))});
   console.log('\n'+passed+'/'+(passed+failed)+' passed ('+pct+'%)');
-  if(failed===0)console.log('\U0001f389 ALL TESTS PASSED');
+  if(failed===0)console.log('\uD83C\uDF89 ALL TESTS PASSED');
   else console.log('\u26a0\ufe0f '+failed+' test(s) failed');
   return failed===0;
 }
@@ -875,4 +895,4 @@ document.addEventListener('DOMContentLoaded',function(){
   setTimeout(function(){recalcLayout();runTests()},100);
 });
 window.addEventListener('resize',resizeCanvas);
-window.OA={runTests:runTests,startGame:startGame,startLevel:startLevel,gameState:gameState,settings:settings,CFG:CFG,getBlocksInArea:getBlocksInArea,chainExplosion:chainExplosion,spawnShockwave:spawnShockwave,spawnDebrisParticles:spawnDebrisParticles,spawnSupernova:spawnSupernova,promptPlayerName:promptPlayerName,getBallSpeed:getBallSpeed,renderLevelSelect:renderLevelSelect,updateDebugBot:updateDebugBot,applyDebugMode:applyDebugMode,BLOCK_ICONS:BLOCK_ICONS};
+window.OA={runTests:runTests,startGame:startGame,startLevel:startLevel,gameState:gameState,settings:settings,CFG:CFG,getBlocksInArea:getBlocksInArea,chainExplosion:chainExplosion,spawnShockwave:spawnShockwave,spawnDebrisParticles:spawnDebrisParticles,spawnSupernova:spawnSupernova,promptPlayerName:promptPlayerName,getBallSpeed:getBallSpeed,renderLevelSelect:renderLevelSelect,updateDebugBot:updateDebugBot,applyDebugMode:applyDebugMode,BLOCK_ICONS:BLOCK_ICONS,dismissNameOverlay:dismissNameOverlay,ensureLoop:ensureLoop};
