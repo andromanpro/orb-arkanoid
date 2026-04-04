@@ -100,7 +100,7 @@ body.debug-mode #debug-panel{display:flex}
     <button class="btn" id="btn-settings" data-i18n="settings">SETTINGS</button>
     <button class="btn" id="btn-debug-main" style="font-size:12px;min-width:140px;opacity:.5">DEBUG: OFF</button>
   </div>
-  <div class="logo-sub" style="position:absolute;bottom:16px;font-size:11px;opacity:.4">v1.0.0</div>
+  <div class="logo-sub" style="position:absolute;bottom:16px;font-size:11px;opacity:.4">v1.1.0</div>
 </div>
 <div id="screen-settings" class="screen">
   <div class="settings-panel">
@@ -111,6 +111,14 @@ body.debug-mode #debug-panel{display:flex}
     <div class="settings-row"><span class="settings-label" data-i18n="visual">Visual FX</span><button class="toggle-btn active" id="btn-visual">ON</button></div>
     <div class="settings-row"><span class="settings-label" data-i18n="orb_size">ORB SIZE</span>
       <div style="display:flex;gap:8px"><button class="lang-btn" id="size-small">S</button><button class="lang-btn active" id="size-normal">M</button><button class="lang-btn" id="size-large">L</button></div>
+    </div>
+    <div class="settings-row"><span class="settings-label" data-i18n="trail">TRAIL</span>
+      <div style="display:flex;gap:6px">
+        <button class="lang-btn" id="trail-fire" style="color:#ff8800">FIRE</button>
+        <button class="lang-btn active" id="trail-lava" style="color:#ff4400">LAVA</button>
+        <button class="lang-btn" id="trail-plasma" style="color:#cc44ff">PLASMA</button>
+        <button class="lang-btn" id="trail-ice" style="color:#44aaff">ICE</button>
+      </div>
     </div>
     <div class="settings-row"><span class="settings-label" data-i18n="difficulty">Difficulty</span>
       <div style="display:flex;gap:8px"><button class="lang-btn" id="diff-easy" data-i18n="easy">Easy</button><button class="lang-btn active" id="diff-normal" data-i18n="normal">Normal</button><button class="lang-btn" id="diff-hard" data-i18n="hard">Hard</button></div>
