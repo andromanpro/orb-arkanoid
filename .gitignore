@@ -1,4 +1,6 @@
 _gen_html.py
 _gen_js.py
-.claude/
+_gen_final.py
 _test_runner.js
+build/
+.claude/
