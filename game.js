@@ -8,7 +8,7 @@ var CFG = {
   BALL_SPEED_NORMAL:340, BALL_SPEED_EASY:260, BALL_SPEED_HARD:420,
   PADDLE_W_NORMAL:104, PADDLE_H:14, PADDLE_FRICTION:0.22,
   BLOCK_COLS:13, BLOCK_ROWS_MAX:10, BLOCK_PAD:2, BLOCK_CORNER:5,
-  BLOCK_TOP_OFFSET:72, BLOCK_AREA_H_FRAC:0.48, PADDLE_Y_FRAC:0.87,
+  BLOCK_TOP_OFFSET:72, BLOCK_AREA_H_FRAC:0.48, PADDLE_Y_FRAC:0.92,
   MAX_PARTICLES:2000, COMBO_WINDOW:1500, POWERUP_FALL_SPEED:90,
   STORAGE_KEY:'orb-arkanoid-v1', STORAGE_LB_KEY:'orb-arkanoid-lb-v1',
   LASER_SPEED:600, VERSION:'1.0.0'
@@ -36,12 +36,12 @@ var BLOCK_DEFS = {
 var LEVELS = [
   {name:'Ignition',     music:'inferno',bg:'fire',  grid:['RRRRRRRRRRRRR','RFFFFFFFFFFFR','RFSTGGGGGTSFR','RFLGEIIIEGLFR','RFLGIWWWIGLFR','RFLGEIIIEGLFR','RFSTGGGGGTSFR','RRRRRRRRRRRRR']},
   {name:'Frost Bite',   music:'frost',  bg:'ice',   grid:['IIIIIIIIIIIII','I...........I','I.EEEEEEEEE.I','I.E.......E.I','I.EEEEEEEEE.I','IIIIIIIIIIIII']},
-  {name:'Fortress Wall',music:'war',    bg:'dark',  grid:['SS.SSSSSSS.SS','S..SSSSSSS..S','...FFFFFFF...','FFFFFFFFFFF..','FFFFFFFFFFF..','FFFFFFFFFFF..']},
-  {name:'Gold Rush',    music:'arcade', bg:'gold',  grid:['....GGGGG....','...GGGGGGG...','..GGGGGGGGG..','..GRGRGRGR...','...RRRRRRR...','....RRRRR....']},
+  {name:'Fortress Wall',music:'war',    bg:'dark',  grid:['S.S.S.S.S.S.S','SSSSSSSSSSSSS','.FFFFFFFFFFF.','.FFFFFFFFFFF.','.F.F.F.F.F.F.','S...........S']},
+  {name:'Gold Rush',    music:'arcade', bg:'gold',  grid:['....GGGGG....','...GGGGGGG...','..GGGGGGGGG..','..RRRRRRRRR..','...RRRRRRR...','....RRRRR....']},
   {name:'TNT Minefield',music:'war',    bg:'fire',  grid:['EEEEEEEEEEEEE','E.T.E.T.E.T.E','EEE.EEE.EEE.E','E.T.E.T.E.T.E','EEEEEEEEEEEEE','E...........E']},
   {name:'Ice Palace',   music:'frost',  bg:'ice',   grid:['IIIIIIIIIIIII','IW.IIIIIII.WI','I...........I','I.IIIIIIIII.I','IW.........WI','IIIIIIIIIIIII']},
   {name:'Lava Forge',   music:'inferno',bg:'lava',  grid:['S..LLLLLLL..S','S.L.LLLLL.L.S','SLL.LLLLL.LLS','SLLL.LLL.LLLS','SLLLL.L.LLLLS','SLLLLL.LLLLLS']},
-  {name:'Checkered',    music:'arcade', bg:'dark',  grid:['FIFIFIFIIFIFI','IFIFFFIFIFICI','FIFIFIFIIFIFI','IFIFFFIFIFICI','FIFIFIFIIFIFI','IFIFFFIFIFICI']},
+  {name:'Checkered',    music:'arcade', bg:'dark',  grid:['FIFIFIFIFIFIF','IFIFIFIFIFIFI','FIFIFIFIFIFIF','IFIFIFIFIFIFI','FIFIFIFIFIFIF','IFIFIFIFIFIFI']},
   {name:'The Gauntlet', music:'war',    bg:'dark',  grid:['SSSSSSSSSSSSS','S.F.F.F.F.F.S','S...........S','S.F.F.F.F.F.S','S...........S','SSSSSSSSSSSSS']},
   {name:'Rainbow Road', music:'arcade', bg:'rainbow',grid:['RRRRRRRRRRRRR','R...........R','RGRGRGRGRGRGR','R...........R','RRRRRRRRRRRRR','RGRGRGRGRGRGR']},
   {name:'Earth Quake',  music:'war',    bg:'dark',  grid:['EEEEEEEEEEEEE','E.E.E.E.E.E.E','EEEEEEEEEEEEE','L.L.L.L.L.L.L','LLLLLLLLLLLLL','L...........L']},
@@ -156,7 +156,7 @@ function recalcLayout(){
   var bwRaw=Math.floor((totalW-pad*(cols+1))/cols);
   var paddleY=Math.floor(CH*CFG.PADDLE_Y_FRAC);
   // Use 8 rows (max in any level) so cells are squarer and orbs denser
-  var availH=paddleY-CFG.BLOCK_TOP_OFFSET-60;
+  var availH=paddleY-CFG.BLOCK_TOP_OFFSET-100; // 100px launch buffer → enough room to maneuver
   var bhMax=Math.floor((availH-pad*9)/8);
   // Square cells: cap cell width to cell height so orbs never overflow vertically
   var cellSize=Math.max(14,Math.min(bwRaw,Math.max(14,bhMax)));
@@ -303,6 +303,10 @@ function onBlockDestroyed(block,ball){
   if(block.type!=='G'&&block.type!=='R'&&block.type!=='S'&&Math.random()<0.07)spawnPowerup(cx,cy,'random');
   gameState.shake=Math.max(gameState.shake,block.type==='L'||block.type==='T'?10:block.type==='E'?5:3);
   gameState.flashAlpha=Math.min(1,gameState.flashAlpha+0.08);gameState.flashColor=block.def.glow||'#ffffff';
+  // Liquid drain animation + blast wave on neighbours
+  var _ltc=LIQUID_TYPES[block.type];
+  if(glReady&&_ltc){block._drain=0.48;block._drainFill=_ltc.fill;}
+  glBlastNeighbors(block);
   checkLevelClear();
 }
 
@@ -718,12 +722,49 @@ function glRenderBlocks(blocks,time){
     if(b.wH)gl.uniform1fv(glU.wh,b.wH);
     gl.drawElements(gl.TRIANGLES,6,gl.UNSIGNED_SHORT,0);
   }
+  // Render draining (just-destroyed) orbs — liquid pours out before they vanish
+  for(var di=0;di<blocks.length;di++){
+    var db=blocks[di];
+    if(db.alive||!db._drain||db._drain<=0)continue;
+    var dtc=LIQUID_TYPES[db.type];if(!dtc)continue;
+    var dFrac=Math.max(0,db._drain/0.48);
+    var dOrbD=db.orbR*2;
+    gl.uniform2f(glU.pos,db.cx-db.orbR,db.cy-db.orbR);gl.uniform2f(glU.size,dOrbD,dOrbD);
+    gl.uniform1f(glU.orbR,db.orbR);
+    gl.uniform1f(glU.fill,db._drainFill*dFrac*dFrac);
+    gl.uniform1f(glU.amp,dtc.amp*(1.0+dFrac*1.5));
+    gl.uniform1f(glU.spd,dtc.spd*2.5);gl.uniform1f(glU.time,time);
+    if(db.type==='R'){var dHue=(time*0.5)%1;var dR=Math.max(0,Math.min(1,Math.abs(dHue*6-3)-1));var dG=Math.max(0,Math.min(1,2-Math.abs(dHue*6-2)));var dBl=Math.max(0,Math.min(1,2-Math.abs(dHue*6-4)));gl.uniform3f(glU.cs,dR*.8,dG*.8,dBl*.8);gl.uniform3f(glU.cg,dR,dG,dBl);}
+    else{gl.uniform3f(glU.cs,dtc.surface[0],dtc.surface[1],dtc.surface[2]);gl.uniform3f(glU.cg,dtc.glow[0],dtc.glow[1],dtc.glow[2]);}
+    gl.uniform3f(glU.cd,dtc.deep[0],dtc.deep[1],dtc.deep[2]);
+    gl.uniform1f(glU.hit,0.0);
+    if(db.wH)gl.uniform1fv(glU.wh,db.wH);
+    gl.drawElements(gl.TRIANGLES,6,gl.UNSIGNED_SHORT,0);
+  }
   gl.bindVertexArray(null);
 }
 
 function updateBlockWaves(blocks,dt){
   for(var i=0;i<blocks.length;i++){
-    var b=blocks[i];if(!b.alive||!b.wH)continue;
+    var b=blocks[i];if(!b.wH)continue;
+    if(!b.alive){
+      // Drain animation: turbulent liquid pours out of dying orb
+      if(b._drain>0){
+        b._drain-=dt;
+        var dtc=LIQUID_TYPES[b.type];
+        if(dtc&&dtc.amp>0){
+          var dImp=b.h*(0.28+Math.random()*0.22);
+          for(var cd=0;cd<6;cd++)b.wV[cd]+=dImp*(0.6+Math.random()*0.8);
+          var dCols=6,dSdt=dt/4;
+          for(var dStep=0;dStep<4;dStep++){
+            for(var dc=0;dc<dCols;dc++){b.wV[dc]*=Math.pow(0.88,dSdt);b.wH[dc]+=b.wV[dc]*dSdt*0.25;if(b.wH[dc]>b.h)b.wH[dc]=b.h;if(b.wH[dc]<-b.h)b.wH[dc]=-b.h;}
+            for(var dc2=0;dc2<dCols;dc2++){if(dc2>0){var dd1=(b.wH[dc2]-b.wH[dc2-1])*0.3*dSdt;b.wV[dc2]-=dd1;b.wV[dc2-1]+=dd1;}if(dc2<dCols-1){var dd2=(b.wH[dc2]-b.wH[dc2+1])*0.3*dSdt;b.wV[dc2]-=dd2;b.wV[dc2+1]+=dd2;}}
+          }
+          if(!isFinite(b.wH[0]))for(var df=0;df<6;df++){b.wH[df]=0;b.wV[df]=0;}
+        }
+      }
+      continue;
+    }
     var tc=LIQUID_TYPES[b.type];if(!tc||tc.amp===0)continue;
     var cols=6,spring=tc.spring,damp=0.97,spread=0.25,maxA=b.h*0.4,sdt=dt/4;
     for(var step=0;step<4;step++){
@@ -737,8 +778,22 @@ function updateBlockWaves(blocks,dt){
 function glBlockHit(block,ballX){
   if(!block.wV)return;
   var hitX=(ballX-block.x)/block.w;var col=Math.round(hitX*5);col=Math.max(0,Math.min(5,col));
-  var imp=block.h*0.3;block.wV[col]-=imp;
-  if(col>0)block.wV[col-1]-=imp*0.4;if(col<5)block.wV[col+1]-=imp*0.4;
+  var imp=block.h*0.65;block.wV[col]-=imp;
+  if(col>0)block.wV[col-1]-=imp*0.5;if(col<5)block.wV[col+1]-=imp*0.5;
+}
+function glBlastNeighbors(block){
+  if(!glReady)return;
+  var range=block.type==='T'||block.type==='L'?2:1;
+  getBlocksInArea(block,range).forEach(function(nb){
+    if(!nb.alive||!nb.wV)return;
+    var dx=nb.col-block.col,dy=nb.row-block.row;
+    var dist=Math.max(1,Math.sqrt(dx*dx+dy*dy));
+    var imp=block.orbR*0.55/dist;
+    // Push toward the far side of the neighbor (from blast origin)
+    var side=dx>0?0:dx<0?5:Math.round(Math.random()*5);
+    nb.wV[side]-=imp*1.8;
+    if(side>0)nb.wV[side-1]-=imp;if(side<5)nb.wV[side+1]-=imp;
+  });
 }
 
 // ============================================================
