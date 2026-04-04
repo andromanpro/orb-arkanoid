@@ -167,7 +167,7 @@ function parseLevel(levelDef){
   var blocks=[],grid=levelDef.grid,cols=layout.cols,pad=CFG.BLOCK_PAD;
   for(var row=0;row<grid.length;row++){var line=grid[row];for(var col=0;col<cols&&col<line.length;col++){var ch=line[col];if(ch==='.'||ch===' ')continue;var def=BLOCK_DEFS[ch];if(!def)continue;
     var bx=layout.gridX+pad+col*(layout.blockW+pad),by=layout.gridY+pad+row*(layout.blockH+pad);
-    var orbD=Math.max(2,Math.min(layout.blockW,layout.blockH)-2);
+    var orbD=Math.max(2,Math.max(layout.blockW,layout.blockH)*0.88);
     blocks.push({x:bx,y:by,w:layout.blockW,h:layout.blockH,cx:bx+layout.blockW/2,cy:by+layout.blockH/2,orbR:orbD/2,type:ch,hp:def.hp,maxHp:def.hp,pts:def.pts,def:def,hitAnim:0,alive:true,row:row,col:col,wH:new Float32Array(6),wV:new Float32Array(6)})}}
   return blocks;
 }
@@ -490,9 +490,11 @@ function gameOver(){
   promptPlayerName(function(name){addLeaderboardEntry(name,gameState.score,gameState.level+1)});
 }
 
+var _lastHudScore=0;
 function updateHUD(){
   var se=document.getElementById('hud-score'),le=document.getElementById('hud-level'),li=document.getElementById('lives-display');
-  if(se)se.textContent=gameState.score.toLocaleString();if(le)le.textContent=(gameState.level+1)+' / '+LEVELS.length;
+  if(se){se.textContent=gameState.score.toLocaleString();if(gameState.score!==_lastHudScore){_lastHudScore=gameState.score;se.classList.add('pulse');setTimeout(function(){se.classList.remove('pulse')},200)}}
+  if(le)le.textContent=(gameState.level+1)+' / '+LEVELS.length;
   if(li){var h='';for(var i=0;i<CFG.MAX_LIVES;i++)h+='<div class="life-orb'+(i>=gameState.lives?' lost':'')+'"></div>';li.innerHTML=h}
 }
 
@@ -566,14 +568,15 @@ var MUSIC_LOOKAHEAD=0.1,MUSIC_INTERVAL=25;
 function musicEnsureGain(){if(!musicGain&&audioCtx){musicGain=audioCtx.createGain();musicGain.gain.value=0.55;musicGain.connect(audioCtx.destination)}}
 function musicStart(theme){
   if(!settings.musicOn||!audioReady)return;
-  musicStop();musicEnsureGain();
+  musicStop();musicEnsureGain();musicReconnect();
   var t=MUSIC_THEMES[theme]||MUSIC_THEMES.inferno;
   musicState.theme=theme;musicState.bpm=t.bpm;musicState.beat=0;
   musicState.nextNoteTime=audioCtx.currentTime+0.1;
   musicState.playing=true;
   musicState.timer=setInterval(musicSchedule,MUSIC_INTERVAL);
 }
-function musicStop(){if(musicState.timer){clearInterval(musicState.timer);musicState.timer=null}musicState.playing=false}
+function musicStop(){if(musicState.timer){clearInterval(musicState.timer);musicState.timer=null}musicState.playing=false;if(musicGain&&audioCtx){try{musicGain.disconnect()}catch(e){}}}
+function musicReconnect(){if(musicGain&&audioCtx){try{musicGain.connect(audioCtx.destination)}catch(e){}}}
 function musicSetIntensity(n){musicState.intensity=Math.max(0,Math.min(5,n))}
 function musicSchedule(){
   if(!musicState.playing||!audioCtx)return;
@@ -840,7 +843,7 @@ function gameLoop(ts){
   updateDebugOverlay(ts);updateDebugBot();updateParticles(dt);if(!gameState.running||gameState.paused){render();return}
   updatePaddle(dt);updateEffects(dt);updatePowerups(dt);updateLasers(dt);updateBackground(dt);if(glReady)updateBlockWaves(gameState.blocks,dt);
   if(gameState.activeEffects.laser>0){gameState._laserTimer=(gameState._laserTimer||0)-dt;if(gameState._laserTimer<=0){fireLasers();gameState._laserTimer=0.4}}
-  for(var i=0;i<gameState.balls.length;i++){var b=gameState.balls[i];if(b.stuck||!b.alive){updateBallStuck(b);continue}
+  for(var i=0;i<gameState.balls.length;i++){var b=gameState.balls[i];if(b.stuck||!b.alive){updateBallStuck(b);b.trail=[];if(b.stuck&&settings.visualFX)spawnFireParticles(b.x,b.y+(b.radius||8),1);continue}
     b.trail.push({x:b.x,y:b.y,age:0});if(b.trail.length>12)b.trail.shift();b.trail.forEach(function(tr){tr.age+=dt*4});b.trail=b.trail.filter(function(tr){return tr.age<1});
     if(settings.visualFX){var bspd=Math.sqrt(b.vx*b.vx+b.vy*b.vy);if(bspd>60&&Math.random()<dt*28)spawnFireParticles(b.x+(Math.random()-0.5)*3,b.y+(Math.random()-0.5)*3,b.fireball?2:1)}}
   var moving=gameState.balls.filter(function(b){return b.alive&&!b.stuck});
@@ -880,8 +883,8 @@ function render(){
 
 var keys={},mouseX=0;
 function initInput(){
-  document.addEventListener('mousemove',function(e){mouseX=e.clientX;if(currentScreen==='screen-game'&&gameState.paddle)gameState.paddle.targetX=e.clientX});
-  document.addEventListener('touchmove',function(e){if(currentScreen!=='screen-game')return;e.preventDefault();var t=e.touches[0];if(t&&gameState.paddle)gameState.paddle.targetX=t.clientX},{passive:false});
+  document.addEventListener('mousemove',function(e){mouseX=e.clientX;if(currentScreen==='screen-game'&&gameState.paddle&&!gameState.botEnabled)gameState.paddle.targetX=e.clientX});
+  document.addEventListener('touchmove',function(e){if(currentScreen!=='screen-game')return;e.preventDefault();var t=e.touches[0];if(t&&gameState.paddle&&!gameState.botEnabled)gameState.paddle.targetX=t.clientX},{passive:false});
   document.addEventListener('touchstart',function(e){ensureAudio();if(currentScreen==='screen-game')handleGameTap()});
   document.addEventListener('mousedown',function(e){ensureAudio();if(currentScreen==='screen-game'&&e.button===0)handleGameTap()});
   document.addEventListener('keydown',function(e){keys[e.code]=true;
@@ -892,11 +895,11 @@ function initInput(){
     if(gameState.debugMode&&currentScreen==='screen-game'){
       if(e.code==='BracketLeft'&&gameState.level>0){e.preventDefault();startLevel(gameState.level-1)}
       if(e.code==='BracketRight'&&gameState.level<LEVELS.length-1){e.preventDefault();startLevel(gameState.level+1)}}
-    if(currentScreen==='screen-game'&&gameState.running&&!gameState.paused){
+    if(currentScreen==='screen-game'&&gameState.running&&!gameState.paused&&!gameState.botEnabled){
       if(e.code==='ArrowLeft'||e.code==='KeyA'){if(gameState.paddle)gameState.paddle.targetX-=30}
       if(e.code==='ArrowRight'||e.code==='KeyD'){if(gameState.paddle)gameState.paddle.targetX+=30}}});
   document.addEventListener('keyup',function(e){keys[e.code]=false});
-  setInterval(function(){if(currentScreen!=='screen-game'||!gameState.running||gameState.paused)return;var p=gameState.paddle;if(!p)return;if(keys['ArrowLeft']||keys['KeyA'])p.targetX-=6;if(keys['ArrowRight']||keys['KeyD'])p.targetX+=6},16);
+  setInterval(function(){if(currentScreen!=='screen-game'||!gameState.running||gameState.paused||gameState.botEnabled)return;var p=gameState.paddle;if(!p)return;if(keys['ArrowLeft']||keys['KeyA'])p.targetX-=6;if(keys['ArrowRight']||keys['KeyD'])p.targetX+=6},16);
 }
 function handleSpacebar(){var lo=document.getElementById('overlay-level');if(lo&&lo.classList.contains('visible')){dismissLevelOverlay();return}gameState.balls.forEach(function(b){if(b.stuck){launchBall(b);playSFX('launch')}})}
 function handleGameTap(){var lo=document.getElementById('overlay-level');if(lo&&lo.classList.contains('visible')){dismissLevelOverlay();return}gameState.balls.forEach(function(b){if(b.stuck){launchBall(b);playSFX('launch')}})}
