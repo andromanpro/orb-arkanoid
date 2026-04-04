@@ -4,8 +4,143 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>ORB ARKANOID</title>
+<style>
+:root{--bg:#0a0806;--bg2:#12100c;--accent:#ff4400;--accent2:#ff8800;--gold:#ffcc00;--text:#e8d5b0;--text2:#a08060;--panel:rgba(20,14,8,0.92);--border:rgba(255,100,20,0.35);--radius:10px}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;overflow:hidden;user-select:none}
+.screen{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center}
+.screen.active{display:flex}
+#screen-start{z-index:10;gap:32px}
+#screen-settings{z-index:10;gap:24px}
+#screen-leaderboard{z-index:10;gap:24px}
+#screen-game{z-index:5;padding:0}
+.logo-title{font-size:clamp(36px,8vw,72px);font-weight:900;letter-spacing:.05em;text-transform:uppercase;background:linear-gradient(135deg,#ff6600,#ffaa00,#ff2200);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 16px rgba(255,80,0,.7));animation:logoGlow 2.5s ease-in-out infinite alternate}
+.logo-sub{font-size:clamp(12px,2vw,16px);color:var(--text2);letter-spacing:.3em;text-transform:uppercase;margin-top:4px;text-align:center}
+@keyframes logoGlow{from{filter:drop-shadow(0 0 12px rgba(255,80,0,.5))}to{filter:drop-shadow(0 0 28px rgba(255,160,0,.9))}}
+.menu-buttons{display:flex;flex-direction:column;gap:12px;align-items:center}
+.btn{min-width:220px;padding:14px 32px;background:transparent;border:2px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:16px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .2s;backdrop-filter:blur(4px)}
+.btn:hover,.btn:focus{border-color:var(--accent);color:var(--accent2);background:rgba(255,80,0,.08);box-shadow:0 0 16px rgba(255,80,0,.3);outline:none}
+.btn:active{transform:scale(.97)}
+.btn.btn-primary{border-color:var(--accent);color:var(--accent2);background:rgba(255,80,0,.12);box-shadow:0 0 20px rgba(255,80,0,.2)}
+.settings-panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:32px;min-width:320px;max-width:480px;width:90vw;display:flex;flex-direction:column;gap:20px}
+.settings-title{font-size:22px;font-weight:700;color:var(--accent2);text-align:center;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px}
+.settings-row{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.settings-label{font-size:14px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em}
+.toggle-btn{padding:8px 20px;border:1.5px solid var(--border);border-radius:8px;background:transparent;color:var(--text2);font-size:13px;font-weight:600;letter-spacing:.05em;cursor:pointer;transition:all .2s;min-width:80px;text-align:center}
+.toggle-btn.active{border-color:var(--accent);color:var(--accent2);background:rgba(255,80,0,.12)}
+.lang-btn{padding:7px 16px;border:1.5px solid var(--border);border-radius:8px;background:transparent;color:var(--text2);font-size:14px;font-weight:700;cursor:pointer;transition:all .2s}
+.lang-btn.active{border-color:var(--accent);color:var(--accent2);background:rgba(255,80,0,.12)}
+.lb-panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:28px 32px;min-width:340px;max-width:500px;width:90vw}
+.lb-title{font-size:20px;font-weight:700;color:var(--accent2);text-transform:uppercase;letter-spacing:.1em;text-align:center;margin-bottom:20px}
+.lb-table{width:100%;border-collapse:collapse}
+.lb-table th{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.1em;padding:0 0 10px 0;text-align:left}
+.lb-table th:last-child,.lb-table td:last-child{text-align:right}
+.lb-table td{padding:8px 0;border-top:1px solid rgba(255,100,20,.1);font-size:14px;color:var(--text)}
+#game-canvas{display:block;position:absolute;inset:0;width:100%;height:100%}
+#hud{position:fixed;top:0;left:0;right:0;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:linear-gradient(180deg,rgba(10,8,6,.95) 0%,rgba(10,8,6,0) 100%);z-index:20;pointer-events:none}
+.hud-group{display:flex;align-items:center;gap:10px}
+.hud-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.1em}
+.hud-value{font-size:20px;font-weight:700;color:var(--text)}
+.hud-score{color:var(--gold)}
+.lives-display{display:flex;gap:6px;align-items:center}
+.life-orb{width:16px;height:16px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#ff8800,#ff2200 60%,#660000);box-shadow:0 0 6px rgba(255,80,0,.6);transition:transform .2s,opacity .2s}
+.life-orb.lost{opacity:.15;box-shadow:none;transform:scale(.8)}
+#hud-btns{position:fixed;top:10px;right:16px;display:flex;gap:8px;z-index:21;pointer-events:all}
+.hud-btn{width:36px;height:36px;background:rgba(20,14,8,.7);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.hud-btn:hover{border-color:var(--accent);color:var(--accent2)}
+#combo-display{position:fixed;top:60px;left:50%;transform:translateX(-50%);font-size:28px;font-weight:900;color:var(--gold);text-shadow:0 0 16px rgba(255,200,0,.8);pointer-events:none;z-index:22;opacity:0;transition:opacity .3s}
+#combo-display.visible{opacity:1}
+.overlay{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.75);z-index:50;gap:24px;backdrop-filter:blur(4px)}
+.overlay.visible{display:flex}
+.overlay-title{font-size:clamp(32px,8vw,64px);font-weight:900;text-transform:uppercase;letter-spacing:.05em;text-align:center}
+.overlay-score{font-size:24px;color:var(--gold);font-weight:700}
+.overlay-sub{font-size:14px;color:var(--text2);text-align:center;max-width:320px}
+.overlay-btns{display:flex;flex-direction:column;gap:12px;align-items:center;margin-top:8px}
+#overlay-victory .overlay-title{background:linear-gradient(135deg,#ffaa00,#ff6600,#ffdd00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 20px rgba(255,160,0,.8))}
+#overlay-gameover .overlay-title{color:#ff3333;text-shadow:0 0 20px rgba(255,50,0,.7)}
+#overlay-level{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.85);z-index:50;flex-direction:column;gap:16px;backdrop-filter:blur(8px)}
+#overlay-level.visible{display:flex}
+.level-number{font-size:clamp(18px,4vw,28px);color:var(--text2);text-transform:uppercase;letter-spacing:.2em}
+.level-name{font-size:clamp(28px,7vw,56px);font-weight:900;color:var(--accent2);text-transform:uppercase;letter-spacing:.05em;text-shadow:0 0 24px rgba(255,120,0,.7)}
+.level-hint{font-size:14px;color:var(--text2);margin-top:8px}
+@keyframes shake{0%,100%{transform:translate(0,0)}20%{transform:translate(-4px,2px)}40%{transform:translate(4px,-2px)}60%{transform:translate(-3px,3px)}80%{transform:translate(3px,-1px)}}
+@keyframes popScore{0%{opacity:1;transform:translate(-50%,-50%) scale(1)}60%{opacity:1;transform:translate(-50%,-80%) scale(1.2)}100%{opacity:0;transform:translate(-50%,-110%) scale(.9)}}
+.score-popup{position:fixed;pointer-events:none;z-index:60;font-size:18px;font-weight:700;color:var(--gold);text-shadow:0 0 8px rgba(255,200,0,.6);animation:popScore .8s ease-out forwards;transform:translate(-50%,-50%)}
+#powerup-bar{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:10px;z-index:21;pointer-events:none}
+.powerup-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;border:1.5px solid rgba(255,255,255,.3);position:relative;overflow:hidden}
+.powerup-timer{position:absolute;bottom:0;left:0;right:0;height:3px;background:rgba(255,255,255,.6);transform-origin:left}
+#debug-overlay{position:fixed;top:56px;left:8px;font-size:11px;color:rgba(255,255,100,.7);font-family:monospace;pointer-events:none;z-index:99;display:none;line-height:1.4}
+body.debug-mode #debug-overlay{display:block}
+</style>
 </head>
 <body>
-<h1>ORB ARKANOID — Coming Soon</h1>
+
+<div id="screen-start" class="screen active">
+  <div class="logo-wrap">
+    <div class="logo-title" id="logo-title">ORB ARKANOID</div>
+    <div class="logo-sub" data-i18n="tagline">Break the Orbs</div>
+  </div>
+  <div class="menu-buttons">
+    <button class="btn btn-primary" id="btn-play" data-i18n="play">PLAY</button>
+    <button class="btn" id="btn-leaderboard" data-i18n="leaderboard">LEADERBOARD</button>
+    <button class="btn" id="btn-settings" data-i18n="settings">SETTINGS</button>
+  </div>
+  <div class="logo-sub" style="position:absolute;bottom:16px;font-size:11px;opacity:.4">v0.1.0</div>
+</div>
+<div id="screen-settings" class="screen">
+  <div class="settings-panel">
+    <div class="settings-title" data-i18n="settings">Settings</div>
+    <div class="settings-row"><span class="settings-label" data-i18n="music">Music</span><button class="toggle-btn active" id="btn-music">ON</button></div>
+    <div class="settings-row"><span class="settings-label" data-i18n="sound">Sound</span><button class="toggle-btn active" id="btn-sfx">ON</button></div>
+    <div class="settings-row"><span class="settings-label" data-i18n="visual">Visual FX</span><button class="toggle-btn active" id="btn-visual">ON</button></div>
+    <div class="settings-row"><span class="settings-label" data-i18n="difficulty">Difficulty</span>
+      <div style="display:flex;gap:8px"><button class="lang-btn" id="diff-easy" data-i18n="easy">Easy</button><button class="lang-btn active" id="diff-normal" data-i18n="normal">Normal</button><button class="lang-btn" id="diff-hard" data-i18n="hard">Hard</button></div>
+    </div>
+    <div class="settings-row"><span class="settings-label" data-i18n="language">Language</span>
+      <div style="display:flex;gap:8px"><button class="lang-btn active" id="lang-en">EN</button><button class="lang-btn" id="lang-ru">RU</button></div>
+    </div>
+    <button class="btn" id="btn-back-settings" data-i18n="back" style="margin-top:8px">BACK</button>
+  </div>
+</div>
+<div id="screen-leaderboard" class="screen">
+  <div class="lb-panel">
+    <div class="lb-title" data-i18n="leaderboard">Leaderboard</div>
+    <table class="lb-table"><thead><tr><th>#</th><th data-i18n="name">Name</th><th data-i18n="level_short">Lvl</th><th data-i18n="score">Score</th></tr></thead><tbody id="lb-body"></tbody></table>
+  </div>
+  <button class="btn" id="btn-back-lb" data-i18n="back">BACK</button>
+</div>
+<div id="screen-game" class="screen">
+  <canvas id="game-canvas"></canvas>
+  <div id="hud">
+    <div class="hud-group"><div class="lives-display" id="lives-display"></div></div>
+    <div class="hud-group" style="flex-direction:column;align-items:center;gap:2px"><div class="hud-label" data-i18n="score">Score</div><div class="hud-value hud-score" id="hud-score">0</div></div>
+    <div class="hud-group" style="flex-direction:column;align-items:flex-end;gap:2px"><div class="hud-label" data-i18n="level">Level</div><div class="hud-value" id="hud-level">1 / 15</div></div>
+  </div>
+  <div id="hud-btns"><button class="hud-btn" id="btn-pause" title="Pause">⏸</button><button class="hud-btn" id="btn-mute" title="Mute">🔊</button></div>
+  <div id="combo-display"></div>
+  <div id="powerup-bar"></div>
+  <div id="debug-overlay"></div>
+  <div id="overlay-level" class="overlay">
+    <div class="level-number" id="overlay-level-num">Level 1</div>
+    <div class="level-name" id="overlay-level-name">Ignition</div>
+    <div class="level-hint" id="overlay-level-hint" data-i18n="press_start">Press SPACE or tap to launch</div>
+  </div>
+  <div id="overlay-pause" class="overlay">
+    <div class="overlay-title" data-i18n="paused">PAUSED</div>
+    <div class="overlay-btns"><button class="btn btn-primary" id="btn-resume" data-i18n="resume">RESUME</button><button class="btn" id="btn-restart" data-i18n="restart">RESTART</button><button class="btn" id="btn-quit" data-i18n="quit">QUIT</button></div>
+  </div>
+  <div id="overlay-gameover" class="overlay">
+    <div class="overlay-title" data-i18n="game_over">GAME OVER</div>
+    <div class="overlay-score" id="go-score"></div><div class="overlay-sub" id="go-sub"></div>
+    <div class="overlay-btns"><button class="btn btn-primary" id="btn-go-retry" data-i18n="retry">RETRY</button><button class="btn" id="btn-go-menu" data-i18n="main_menu">MAIN MENU</button></div>
+  </div>
+  <div id="overlay-victory" class="overlay">
+    <div class="overlay-title" data-i18n="victory">VICTORY!</div>
+    <div class="overlay-score" id="vic-score"></div><div class="overlay-sub" id="vic-sub"></div>
+    <div class="overlay-btns"><button class="btn btn-primary" id="btn-vic-next" data-i18n="next_level">NEXT LEVEL</button><button class="btn" id="btn-vic-menu" data-i18n="main_menu">MAIN MENU</button></div>
+  </div>
+</div>
+
+<script src="game.js"></script>
 </body>
 </html>
