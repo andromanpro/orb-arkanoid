@@ -22,7 +22,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 .btn:hover,.btn:focus{border-color:var(--accent);color:var(--accent2);background:rgba(255,80,0,.08);box-shadow:0 0 16px rgba(255,80,0,.3);outline:none}
 .btn:active{transform:scale(.97)}
 .btn.btn-primary{border-color:var(--accent);color:var(--accent2);background:rgba(255,80,0,.12);box-shadow:0 0 20px rgba(255,80,0,.2)}
-.settings-panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:32px;min-width:320px;max-width:480px;width:90vw;display:flex;flex-direction:column;gap:20px}
+.settings-panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:32px;min-width:320px;max-width:480px;width:90vw;display:flex;flex-direction:column;gap:20px;max-height:85vh;overflow-y:auto}
 .settings-title{font-size:22px;font-weight:700;color:var(--accent2);text-align:center;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px}
 .settings-row{display:flex;align-items:center;justify-content:space-between;gap:16px}
 .settings-label{font-size:14px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em}
@@ -36,7 +36,8 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 .lb-table th{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.1em;padding:0 0 10px 0;text-align:left}
 .lb-table th:last-child,.lb-table td:last-child{text-align:right}
 .lb-table td{padding:8px 0;border-top:1px solid rgba(255,100,20,.1);font-size:14px;color:var(--text)}
-#game-canvas{display:block;position:absolute;inset:0;width:100%;height:100%}
+#gl-canvas{display:block;position:absolute;inset:0;width:100%;height:100%;z-index:4}
+#game-canvas{display:block;position:absolute;inset:0;width:100%;height:100%;z-index:5;background:transparent}
 #hud{position:fixed;top:0;left:0;right:0;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:linear-gradient(180deg,rgba(10,8,6,.95) 0%,rgba(10,8,6,0) 100%);z-index:20;pointer-events:none}
 .hud-group{display:flex;align-items:center;gap:10px}
 .hud-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.1em}
@@ -127,6 +128,7 @@ body.debug-mode #debug-panel{display:flex}
   <button class="btn" id="btn-back-levelselect" data-i18n="back" style="margin-top:8px">BACK</button>
 </div>
 <div id="screen-game" class="screen">
+  <canvas id="gl-canvas"></canvas>
   <canvas id="game-canvas"></canvas>
   <div id="hud">
     <div class="hud-group"><div class="lives-display" id="lives-display"></div></div>
