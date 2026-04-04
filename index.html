@@ -85,7 +85,7 @@ body.debug-mode #debug-overlay{display:block}
     <button class="btn" id="btn-leaderboard" data-i18n="leaderboard">LEADERBOARD</button>
     <button class="btn" id="btn-settings" data-i18n="settings">SETTINGS</button>
   </div>
-  <div class="logo-sub" style="position:absolute;bottom:16px;font-size:11px;opacity:.4">v0.1.0</div>
+  <div class="logo-sub" style="position:absolute;bottom:16px;font-size:11px;opacity:.4">v0.3.0</div>
 </div>
 <div id="screen-settings" class="screen">
   <div class="settings-panel">
@@ -138,6 +138,12 @@ body.debug-mode #debug-overlay{display:block}
     <div class="overlay-title" data-i18n="victory">VICTORY!</div>
     <div class="overlay-score" id="vic-score"></div><div class="overlay-sub" id="vic-sub"></div>
     <div class="overlay-btns"><button class="btn btn-primary" id="btn-vic-next" data-i18n="next_level">NEXT LEVEL</button><button class="btn" id="btn-vic-menu" data-i18n="main_menu">MAIN MENU</button></div>
+  </div>
+  <div id="overlay-name" class="overlay" style="gap:20px">
+    <div class="overlay-title" style="font-size:clamp(22px,5vw,38px)" data-i18n="enter_name">ENTER YOUR NAME</div>
+    <input type="text" id="name-input" maxlength="10" autocomplete="off" spellcheck="false"
+      style="font-size:22px;font-weight:700;text-transform:uppercase;text-align:center;background:rgba(20,14,8,0.9);border:2px solid var(--accent);border-radius:10px;color:var(--accent2);padding:12px 28px;letter-spacing:.15em;outline:none;width:260px;caret-color:var(--accent2)"/>
+    <button class="btn btn-primary" id="btn-name-ok" data-i18n="confirm">OK</button>
   </div>
 </div>
 
