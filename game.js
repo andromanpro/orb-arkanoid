@@ -153,21 +153,22 @@ var layout={blockW:0,blockH:0,gridX:0,gridY:0,gridW:0,gridH:0,paddleY:0,cols:13}
 
 function recalcLayout(){
   var cols=CFG.BLOCK_COLS,pad=CFG.BLOCK_PAD,totalW=CW*0.92;
-  var bw=Math.floor((totalW-pad*(cols+1))/cols);
+  var bwRaw=Math.floor((totalW-pad*(cols+1))/cols);
   var paddleY=Math.floor(CH*CFG.PADDLE_Y_FRAC);
-  // Cap block height so BLOCK_ROWS_MAX rows always fit between HUD and paddle (60px launch buffer)
+  // Use 8 rows (max in any level) so cells are squarer and orbs denser
   var availH=paddleY-CFG.BLOCK_TOP_OFFSET-60;
-  var bhMax=Math.floor((availH-pad*(CFG.BLOCK_ROWS_MAX+1))/CFG.BLOCK_ROWS_MAX);
-  var bh=Math.max(14,Math.min(Math.floor(bw*0.72),Math.max(14,bhMax)));
-  var gw=bw*cols+pad*(cols+1);
-  layout.blockW=bw;layout.blockH=bh;layout.gridX=Math.floor((CW-gw)/2);layout.gridY=CFG.BLOCK_TOP_OFFSET;layout.gridW=gw;layout.cols=cols;layout.paddleY=paddleY;
+  var bhMax=Math.floor((availH-pad*9)/8);
+  // Square cells: cap cell width to cell height so orbs never overflow vertically
+  var cellSize=Math.max(14,Math.min(bwRaw,Math.max(14,bhMax)));
+  var gw=cellSize*cols+pad*(cols+1);
+  layout.blockW=cellSize;layout.blockH=cellSize;layout.gridX=Math.max(0,Math.floor((CW-gw)/2));layout.gridY=CFG.BLOCK_TOP_OFFSET;layout.gridW=gw;layout.cols=cols;layout.paddleY=paddleY;
 }
 
 function parseLevel(levelDef){
   var blocks=[],grid=levelDef.grid,cols=layout.cols,pad=CFG.BLOCK_PAD;
   for(var row=0;row<grid.length;row++){var line=grid[row];for(var col=0;col<cols&&col<line.length;col++){var ch=line[col];if(ch==='.'||ch===' ')continue;var def=BLOCK_DEFS[ch];if(!def)continue;
     var bx=layout.gridX+pad+col*(layout.blockW+pad),by=layout.gridY+pad+row*(layout.blockH+pad);
-    var orbD=Math.max(2,Math.max(layout.blockW,layout.blockH)*0.88);
+    var orbD=Math.max(2,layout.blockW*0.90); // cells are square → orbD fits both dims
     blocks.push({x:bx,y:by,w:layout.blockW,h:layout.blockH,cx:bx+layout.blockW/2,cy:by+layout.blockH/2,orbR:orbD/2,type:ch,hp:def.hp,maxHp:def.hp,pts:def.pts,def:def,hitAnim:0,alive:true,row:row,col:col,wH:new Float32Array(6),wV:new Float32Array(6)})}}
   return blocks;
 }
@@ -834,9 +835,37 @@ function updateDebugBot(){
   var balls=gameState.balls;if(!balls.length)return;
   balls.forEach(function(b){if(b.stuck&&b.alive){launchBall(b);playSFX('launch')}});
   var active=balls.filter(function(b){return b.alive&&!b.stuck});if(!active.length)return;
+  // Pick the most dangerous ball (lowest on screen / closest to paddle)
   var tgt=active.reduce(function(a,b){return b.y>a.y?b:a},active[0]);
-  var px=tgt.x;if(tgt.vy>0){var eta=(p.y-tgt.y)/tgt.vy;if(eta>0&&eta<0.7)px=tgt.x+tgt.vx*eta}
-  p.targetX=px;
+  // Predict where ball will land on paddle level
+  var predictX=tgt.x;
+  if(tgt.vy>0){
+    var eta=(p.y-tgt.y)/tgt.vy;
+    if(eta>0&&eta<2.5){
+      predictX=tgt.x+tgt.vx*eta;
+      // Simple wall-bounce unwrap
+      var br=getBallRadius(),lo2=br,hi2=CW-br;
+      for(var _w=0;_w<4;_w++){if(predictX<lo2){predictX=2*lo2-predictX;}else if(predictX>hi2){predictX=2*hi2-predictX;}else break;}
+    }
+  }
+  // Find target orb: prefer the bottom-most row, then closest to predictX
+  var aliveBlks=gameState.blocks.filter(function(b){return b.alive});
+  if(aliveBlks.length>0){
+    var maxRow=aliveBlks.reduce(function(acc,b){return b.row>acc?b.row:acc},0);
+    var bottomRow=aliveBlks.filter(function(b){return b.row===maxRow});
+    var orbTarget=bottomRow.reduce(function(a,b){return Math.abs(b.cx-predictX)<Math.abs(a.cx-predictX)?b:a},bottomRow[0]);
+    // Back-calculate paddle offset: angle = atan2(dx_to_orb, dy_up_to_orb)
+    var dx=orbTarget.cx-predictX;
+    var dyUp=Math.max(20,p.y-orbTarget.cy);
+    var angle=Math.atan2(dx,dyUp); // angle from vertical
+    var maxA=60*Math.PI/180;
+    angle=Math.max(-maxA,Math.min(maxA,angle));
+    var off=angle/maxA; // [-1,1]
+    p.targetX=predictX-off*(p.width/2);
+  } else {
+    // No blocks left — just catch the ball
+    p.targetX=predictX;
+  }
 }
 function gameLoop(ts){
   var dt=Math.min((ts-lastTime)/1000,0.05);lastTime=ts;lastDt=dt;animFrame=requestAnimationFrame(gameLoop);
