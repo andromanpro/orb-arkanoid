@@ -1,6 +1,6 @@
 'use strict';
 // ============================================================
-// === ORB ARKANOID v0.3.0 — Phase 4 =========================
+// === ORB ARKANOID v1.0.0 — Final ===========================
 // ============================================================
 
 var CFG = {
@@ -11,7 +11,7 @@ var CFG = {
   BLOCK_TOP_OFFSET:72, BLOCK_AREA_H_FRAC:0.48, PADDLE_Y_FRAC:0.87,
   MAX_PARTICLES:2000, COMBO_WINDOW:1500, POWERUP_FALL_SPEED:90,
   STORAGE_KEY:'orb-arkanoid-v1', STORAGE_LB_KEY:'orb-arkanoid-lb-v1',
-  LASER_SPEED:600, VERSION:'0.3.0'
+  LASER_SPEED:600, VERSION:'1.0.0'
 };
 
 var DIFFICULTY = {
@@ -131,7 +131,7 @@ function parseLevel(levelDef){
 
 
 function makeBall(x,y){return{x:x||CW/2,y:y||(layout.paddleY-CFG.BALL_RADIUS-2),vx:0,vy:0,radius:CFG.BALL_RADIUS,stuck:true,fireball:false,trail:[],alive:true}}
-function getBallSpeed(){var d=DIFFICULTY[settings.difficulty]||DIFFICULTY.normal;return CFG.BALL_SPEED_NORMAL*d.speed}
+function getBallSpeed(){var d=DIFFICULTY[settings.difficulty]||DIFFICULTY.normal;var lvlBonus=1+(gameState.level/(LEVELS.length-1||1))*0.30;return CFG.BALL_SPEED_NORMAL*d.speed*lvlBonus}
 function launchBall(ball){if(!ball.stuck)return;var a=(Math.random()*60-30)*Math.PI/180;var s=getBallSpeed();ball.vx=Math.sin(a)*s;ball.vy=-Math.cos(a)*s;ball.stuck=false}
 function updateBallStuck(ball){if(!ball||!ball.stuck)return;var p=gameState.paddle;ball.x=p.x;ball.y=p.y-ball.radius-1}
 
@@ -651,9 +651,19 @@ function moveBall(ball,dt){
   for(var s=0;s<steps;s++){ball.x+=ball.vx*subDt;ball.y+=ball.vy*subDt;checkBallWalls(ball);if(!ball.alive)break;if(checkBallPaddle(ball))break;checkBallBlocks(ball)}
 }
 
+function renderDebugHitboxes(){
+  ctx.save();ctx.globalAlpha=0.55;ctx.lineWidth=1;
+  ctx.strokeStyle='#00ff88';gameState.blocks.forEach(function(b){if(!b.alive)return;ctx.strokeRect(b.x,b.y,b.w,b.h)});
+  ctx.strokeStyle='#ff4444';gameState.balls.forEach(function(b){if(!b.alive&&!b.stuck)return;ctx.beginPath();ctx.arc(b.x,b.y,b.radius,0,Math.PI*2);ctx.stroke()});
+  if(gameState.paddle){ctx.strokeStyle='#4488ff';var p=gameState.paddle;ctx.strokeRect(p.x-p.width/2,p.y-p.height/2,p.width,p.height)}
+  ctx.strokeStyle='#ffff00';gameState.powerups.forEach(function(pu){if(!pu.alive)return;ctx.strokeRect(pu.x-pu.w/2,pu.y-pu.h/2,pu.w,pu.h)});
+  ctx.restore();
+}
 function render(){
   ctx.save();if(gameState.shake>0.5)ctx.translate((Math.random()-0.5)*gameState.shake,(Math.random()-0.5)*gameState.shake);
-  renderBackground();renderBlocks();renderLasers();renderPowerups();renderPaddle();renderBalls();renderParticles();renderFlash();ctx.restore();
+  renderBackground();renderBlocks();renderLasers();renderPowerups();renderPaddle();renderBalls();renderParticles();renderFlash();
+  if(gameState.debugMode)renderDebugHitboxes();
+  ctx.restore();
 }
 
 var keys={},mouseX=0;
@@ -768,6 +778,13 @@ function runTests(){
   // Phase 3: updateBackground runs
   (function(){try{recalcLayout();gameState.running=true;gameState.paused=false;gameState.level=6;updateBackground(0.016);gameState.running=false;assert('Phase3: updateBackground runs',true)}catch(e){assert('Phase3: updateBackground',false,e.message)}})();
 
+  // Phase 5: level speed scaling
+  (function(){recalcLayout();var savedLvl=gameState.level;gameState.level=0;var s0=getBallSpeed();gameState.level=14;var s14=getBallSpeed();gameState.level=savedLvl;assert('Phase5: lvl14 faster than lvl0',s14>s0*1.25,'s14='+s14+' s0='+s0);assert('Phase5: speed scales ~30%',s14<s0*1.36,'s14='+s14)})();
+  // Phase 5: renderDebugHitboxes exists
+  (function(){assert('Phase5: renderDebugHitboxes',typeof renderDebugHitboxes==='function')})();
+  // Phase 5: version 1.0.0
+  (function(){assert('Phase5: VERSION 1.0.0',CFG.VERSION==='1.0.0','got:'+CFG.VERSION)})();
+
   // Phase 4: i18n new keys
   (function(){var sl=settings.language;settings.language='en';assert('Phase4: confirm EN',t('confirm')==='OK');assert('Phase4: enter_name EN',t('enter_name')==='ENTER YOUR NAME');settings.language='ru';assert('Phase4: confirm RU',t('confirm')==='\u041e\u041a');settings.language=sl})();
   // Phase 4: spawnSupernova exists and spawns particles
@@ -798,4 +815,4 @@ document.addEventListener('DOMContentLoaded',function(){
   setTimeout(function(){recalcLayout();runTests()},100);
 });
 window.addEventListener('resize',resizeCanvas);
-window.OA={runTests:runTests,startGame:startGame,startLevel:startLevel,gameState:gameState,settings:settings,CFG:CFG,getBlocksInArea:getBlocksInArea,chainExplosion:chainExplosion,spawnShockwave:spawnShockwave,spawnDebrisParticles:spawnDebrisParticles,spawnSupernova:spawnSupernova,promptPlayerName:promptPlayerName};
+window.OA={runTests:runTests,startGame:startGame,startLevel:startLevel,gameState:gameState,settings:settings,CFG:CFG,getBlocksInArea:getBlocksInArea,chainExplosion:chainExplosion,spawnShockwave:spawnShockwave,spawnDebrisParticles:spawnDebrisParticles,spawnSupernova:spawnSupernova,promptPlayerName:promptPlayerName,getBallSpeed:getBallSpeed};
