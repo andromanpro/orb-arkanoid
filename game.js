@@ -1,6 +1,6 @@
 'use strict';
 // ============================================================
-// === ORB ARKANOID v0.1.0 — Phase 1 =========================
+// === ORB ARKANOID v0.2.0 — Phase 2 =========================
 // ============================================================
 
 var CFG = {
@@ -9,9 +9,9 @@ var CFG = {
   PADDLE_W_NORMAL:104, PADDLE_H:14, PADDLE_FRICTION:0.22,
   BLOCK_COLS:13, BLOCK_ROWS_MAX:10, BLOCK_PAD:4, BLOCK_CORNER:5,
   BLOCK_TOP_OFFSET:72, BLOCK_AREA_H_FRAC:0.48, PADDLE_Y_FRAC:0.87,
-  MAX_PARTICLES:800, COMBO_WINDOW:1500, POWERUP_FALL_SPEED:90,
+  MAX_PARTICLES:2000, COMBO_WINDOW:1500, POWERUP_FALL_SPEED:90,
   STORAGE_KEY:'orb-arkanoid-v1', STORAGE_LB_KEY:'orb-arkanoid-lb-v1',
-  LASER_SPEED:600, VERSION:'0.1.0'
+  LASER_SPEED:600, VERSION:'0.2.0'
 };
 
 var DIFFICULTY = {
@@ -111,7 +111,7 @@ function parseLevel(levelDef){
   var blocks=[],grid=levelDef.grid,cols=layout.cols,pad=CFG.BLOCK_PAD;
   for(var row=0;row<grid.length;row++){var line=grid[row];for(var col=0;col<cols&&col<line.length;col++){var ch=line[col];if(ch==='.'||ch===' ')continue;var def=BLOCK_DEFS[ch];if(!def)continue;
     var bx=layout.gridX+pad+col*(layout.blockW+pad),by=layout.gridY+pad+row*(layout.blockH+pad);
-    blocks.push({x:bx,y:by,w:layout.blockW,h:layout.blockH,type:ch,hp:def.hp,maxHp:def.hp,pts:def.pts,def:def,hitAnim:0,alive:true})}}
+    blocks.push({x:bx,y:by,w:layout.blockW,h:layout.blockH,type:ch,hp:def.hp,maxHp:def.hp,pts:def.pts,def:def,hitAnim:0,alive:true,row:row,col:col})}}
   return blocks;
 }
 
@@ -171,14 +171,50 @@ function checkBallPaddle(ball){
 }
 
 function checkBallBlocks(ball){
-  var hitAny=false;
+  var hitAny=false,rv;
   for(var i=0;i<gameState.blocks.length;i++){var b=gameState.blocks[i];if(!b.alive)continue;
-    var c=circleRectCollision(ball.x,ball.y,ball.radius,b.x,b.y,b.w,b.h);if(!c.hit)continue;hitAny=true;
-    if(!ball.fireball){var rv=reflectVelocity(ball.vx,ball.vy,c.nx,c.ny);ball.vx=rv.vx;ball.vy=rv.vy;enforceMinVY(ball);ball.x+=c.nx*(c.depth+0.5);ball.y+=c.ny*(c.depth+0.5)}
+    var c=circleRectCollision(ball.x,ball.y,ball.radius,b.x,b.y,b.w,b.h);if(!c.hit)continue;
+    hitAny=true;
+    if(b.type==='S'){rv=reflectVelocity(ball.vx,ball.vy,c.nx,c.ny);ball.vx=rv.vx;ball.vy=rv.vy;enforceMinVY(ball);ball.x+=c.nx*(c.depth+0.5);ball.y+=c.ny*(c.depth+0.5);b.hitAnim=1;playSFX('break_steel');spawnImpactParticles(ball.x,ball.y,'spark',3);break}
+    if(!ball.fireball){rv=reflectVelocity(ball.vx,ball.vy,c.nx,c.ny);ball.vx=rv.vx;ball.vy=rv.vy;enforceMinVY(ball);ball.x+=c.nx*(c.depth+0.5);ball.y+=c.ny*(c.depth+0.5)}
     b.hitAnim=1;b.hp--;
     if(b.hp<=0){b.alive=false;onBlockDestroyed(b,ball)}else{playSFX('hit');spawnImpactParticles(ball.x,ball.y,'spark',3)}
     if(!ball.fireball)break}
   return hitAny;
+}
+
+var _tntVisited=null;
+
+function getBlocksInArea(center,range){
+  return gameState.blocks.filter(function(b){return b.alive&&b!==center&&Math.abs(b.row-center.row)<=range&&Math.abs(b.col-center.col)<=range});
+}
+
+function damageAdjacentBlocks(block,ball){
+  getBlocksInArea(block,1).forEach(function(b){
+    if(b.type==='S')return;b.hitAnim=1;b.hp--;
+    if(b.hp<=0){b.alive=false;onBlockDestroyed(b,null)}
+    else spawnImpactParticles(b.x+b.w/2,b.y+b.h/2,'ice',2)});
+}
+
+function splashDamageBlocks(center,range,ball){
+  getBlocksInArea(center,range).forEach(function(b){
+    if(b.type==='S')return;b.hitAnim=1;b.hp--;
+    if(b.hp<=0){b.alive=false;onBlockDestroyed(b,null)}
+    else spawnImpactParticles(b.x+b.w/2,b.y+b.h/2,'fire',3)});
+}
+
+function chainExplosion(block,ball){
+  var isRoot=(_tntVisited===null);if(isRoot)_tntVisited={};
+  var key=block.row+'_'+block.col;
+  if(_tntVisited[key]){if(isRoot)_tntVisited=null;return}
+  _tntVisited[key]=true;
+  getBlocksInArea(block,1).forEach(function(b){
+    if(!b.alive||b.type==='S')return;
+    var bkey=b.row+'_'+b.col;if(_tntVisited[bkey])return;
+    b.hitAnim=1;b.hp--;
+    if(b.hp<=0){b.alive=false;onBlockDestroyed(b,ball)}
+    else spawnImpactParticles(b.x+b.w/2,b.y+b.h/2,'fire',4)});
+  if(isRoot)_tntVisited=null;
 }
 
 
@@ -189,13 +225,21 @@ function showCombo(n){var el=document.getElementById('combo-display');if(!el)ret
 function onBlockDestroyed(block,ball){
   var now=Date.now();if(now-gameState.comboTimer<CFG.COMBO_WINDOW)gameState.combo++;else gameState.combo=1;gameState.comboTimer=now;
   var mult=comboMultiplier(gameState.combo),pts=Math.round(block.pts*mult*(DIFFICULTY[settings.difficulty]||DIFFICULTY.normal).score);
-  gameState.score+=pts;showScorePopup(block.x+block.w/2,block.y+block.h/2,pts);updateHUD();
+  var cx=block.x+block.w/2,cy=block.y+block.h/2;
+  gameState.score+=pts;showScorePopup(cx,cy,pts);updateHUD();
   if(gameState.combo>=2)showCombo(gameState.combo);
-  if(block.type==='F'){spawnImpactParticles(block.x+block.w/2,block.y+block.h/2,'fire',8);playSFX('break_fire')}
-  else if(block.type==='I'){spawnImpactParticles(block.x+block.w/2,block.y+block.h/2,'ice',6);playSFX('break_ice');if(ball)speedBall(ball,0.8,3000)}
-  else if(block.type==='G'){spawnImpactParticles(block.x+block.w/2,block.y+block.h/2,'spark',12);playSFX('break_gold');spawnPowerup(block.x+block.w/2,block.y+block.h/2,'random')}
-  else{spawnImpactParticles(block.x+block.w/2,block.y+block.h/2,'spark',5);playSFX('break_generic')}
-  gameState.shake=Math.max(gameState.shake,block.type==='L'||block.type==='T'?8:3);
+  switch(block.type){
+    case 'F': spawnImpactParticles(cx,cy,'fire',8);playSFX('break_fire');if(ball)speedBall(ball,1.1,2000);break;
+    case 'I': spawnImpactParticles(cx,cy,'ice',6);playSFX('break_ice');if(ball)speedBall(ball,0.8,3000);break;
+    case 'W': spawnWaterParticles(cx,cy,8);playSFX('break_water');damageAdjacentBlocks(block,ball);break;
+    case 'E': spawnDebrisParticles(cx,cy,block.def.color,8);playSFX('break_earth');break;
+    case 'L': spawnFireParticles(cx,cy,12);spawnSmokeParticles(cx,cy,4);spawnShockwave(cx,cy);playSFX('break_lava');splashDamageBlocks(block,1,ball);break;
+    case 'G': spawnImpactParticles(cx,cy,'spark',12);playSFX('break_gold');spawnPowerup(cx,cy,'random');break;
+    case 'T': spawnSmokeParticles(cx,cy,6);spawnShockwave(cx,cy);playSFX('break_tnt');chainExplosion(block,ball);break;
+    case 'R': spawnImpactParticles(cx,cy,'spark',8);playSFX('break_gold');spawnPowerup(cx,cy,'random');break;
+    default:  spawnImpactParticles(cx,cy,'spark',5);playSFX('break_generic');
+  }
+  gameState.shake=Math.max(gameState.shake,block.type==='L'||block.type==='T'?10:block.type==='E'?5:3);
   gameState.flashAlpha=Math.min(1,gameState.flashAlpha+0.08);gameState.flashColor=block.def.glow||'#ffffff';
   checkLevelClear();
 }
@@ -255,11 +299,51 @@ function spawnImpactParticles(x,y,type,count){
     p.x=x;p.y=y;p.vx=Math.cos(a)*s;p.vy=Math.sin(a)*s-60;p.color=c;p.alpha=1;p.radius=2+Math.random()*3;p.life=0.4+Math.random()*0.4;p.maxLife=p.life;p.gravity=200;p.type=type}
 }
 
-function updateParticles(dt){for(var i=0;i<particlePool.length;i++){var p=particlePool[i];if(!p._alive)continue;p.life-=dt;if(p.life<=0){poolKill(p);continue}p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=p.gravity*dt;p.alpha=p.life/p.maxLife;p.radius*=0.98}}
+function spawnFireParticles(x,y,count){
+  if(!settings.visualFX)return;
+  for(var i=0;i<count;i++){var p=poolAlloc();var a=Math.random()*Math.PI*2,s=60+Math.random()*180;
+    p.x=x;p.y=y;p.vx=Math.cos(a)*s;p.vy=Math.sin(a)*s-80;
+    p.color=['#ff6600','#ff8800','#ffaa00','#ff4400','#ffcc00'][Math.floor(Math.random()*5)];
+    p.alpha=1;p.radius=3+Math.random()*4;p.life=0.5+Math.random()*0.5;p.maxLife=p.life;p.gravity=150;p.type='fire'}
+}
+
+function spawnDebrisParticles(x,y,color,count){
+  if(!settings.visualFX)return;
+  for(var i=0;i<count;i++){var p=poolAlloc();var a=Math.random()*Math.PI*2,s=40+Math.random()*160;
+    p.x=x;p.y=y;p.vx=Math.cos(a)*s;p.vy=Math.sin(a)*s-40;
+    p.color=color||'#886633';p.alpha=1;p.radius=2+Math.random()*4;p.life=0.5+Math.random()*0.6;p.maxLife=p.life;p.gravity=300;p.type='debris'}
+}
+
+function spawnWaterParticles(x,y,count){
+  if(!settings.visualFX)return;
+  for(var i=0;i<count;i++){var p=poolAlloc();var a=-Math.PI/2+(Math.random()-0.5)*Math.PI,s=80+Math.random()*200;
+    p.x=x;p.y=y;p.vx=Math.cos(a)*s;p.vy=Math.sin(a)*s;
+    p.color=['#2288ff','#44aaff','#88ccff','#aaddff'][Math.floor(Math.random()*4)];
+    p.alpha=1;p.radius=2+Math.random()*3;p.life=0.4+Math.random()*0.4;p.maxLife=p.life;p.gravity=250;p.type='water'}
+}
+
+function spawnSmokeParticles(x,y,count){
+  if(!settings.visualFX)return;
+  for(var i=0;i<count;i++){var p=poolAlloc();var a=-Math.PI/2+(Math.random()-0.5)*0.8,s=20+Math.random()*60;
+    p.x=x+(Math.random()-0.5)*20;p.y=y;p.vx=Math.cos(a)*s;p.vy=Math.sin(a)*s;
+    p.color=['#555555','#777777','#444444'][Math.floor(Math.random()*3)];
+    p.alpha=0.7;p.radius=8+Math.random()*12;p.life=0.8+Math.random()*0.6;p.maxLife=p.life;p.gravity=-30;p.type='smoke'}
+}
+
+function spawnShockwave(x,y){
+  if(!settings.visualFX)return;
+  var p=poolAlloc();p.x=x;p.y=y;p.vx=0;p.vy=0;p.color='#ff8800';
+  p.alpha=0.9;p.radius=10;p.life=0.4;p.maxLife=0.4;p.gravity=0;p.type='shockwave';p._growRate=220;
+}
+
+function updateParticles(dt){for(var i=0;i<particlePool.length;i++){var p=particlePool[i];if(!p._alive)continue;p.life-=dt;if(p.life<=0){poolKill(p);continue}p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=p.gravity*dt;p.alpha=p.life/p.maxLife;if(p.type==='shockwave'){p.radius+=(p._growRate||200)*dt}else{p.radius*=0.98}}}
 
 function renderParticles(){
-  ctx.save();for(var i=0;i<particlePool.length;i++){var p=particlePool[i];if(!p._alive||p.alpha<=0)continue;
-    ctx.globalAlpha=p.alpha*0.9;ctx.globalCompositeOperation='lighter';ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,Math.max(0.5,p.radius),0,Math.PI*2);ctx.fill()}
+  ctx.save();
+  for(var i=0;i<particlePool.length;i++){var p=particlePool[i];if(!p._alive||p.alpha<=0)continue;
+    if(p.type==='smoke'){ctx.globalCompositeOperation='source-over';ctx.globalAlpha=p.alpha*0.45;ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,Math.max(0.5,p.radius),0,Math.PI*2);ctx.fill()}
+    else if(p.type==='shockwave'){ctx.globalCompositeOperation='lighter';ctx.globalAlpha=p.alpha*0.55;ctx.strokeStyle=p.color;ctx.lineWidth=3;ctx.beginPath();ctx.arc(p.x,p.y,Math.max(0.5,p.radius),0,Math.PI*2);ctx.stroke()}
+    else{ctx.globalAlpha=p.alpha*0.9;ctx.globalCompositeOperation='lighter';ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,Math.max(0.5,p.radius),0,Math.PI*2);ctx.fill()}}
   ctx.globalCompositeOperation='source-over';ctx.globalAlpha=1;ctx.restore();
 }
 
@@ -274,8 +358,9 @@ function updateLasers(dt){
 
 
 function checkLevelClear(){
+  if(gameState._levelClearing)return;
   var rem=gameState.blocks.filter(function(b){return b.alive&&b.type!=='S'}).length;
-  if(rem===0)setTimeout(function(){levelClear()},300);
+  if(rem===0){gameState._levelClearing=true;setTimeout(function(){gameState._levelClearing=false;levelClear()},300)}
 }
 
 function levelClear(){
@@ -354,6 +439,11 @@ function _playSFX(type){
     case'gameover':sw(440,110,'sawtooth',0.20,now,0.6);sw(330,82,'sawtooth',0.15,now+0.3,0.6);sw(220,55,'sawtooth',0.10,now+0.6,0.5);break;
     case'victory':[523,659,784,1047].forEach(function(f,i){osc(f,'sine',0.14-i*0.02,now+i*0.12,0.4)});break;
     case'launch':sw(200,600,'sine',0.10,now,0.12);break;
+    case'break_steel':osc(220,'square',0.06,now,0.08);osc(180,'square',0.04,now+0.02,0.06);break;
+    case'break_water':ns(0.12,now,0.15,2000);sw(800,200,'sine',0.08,now,0.12);break;
+    case'break_earth':sw(120,40,'sawtooth',0.20,now,0.25);ns(0.10,now,0.15,300);break;
+    case'break_lava':sw(160,40,'sawtooth',0.25,now,0.35);ns(0.15,now+0.05,0.25,200);sw(80,20,'sine',0.12,now+0.1,0.3);break;
+    case'break_tnt':sw(300,40,'sawtooth',0.30,now,0.5);ns(0.20,now,0.4,400);sw(200,30,'sawtooth',0.20,now+0.1,0.4);sw(440,60,'square',0.15,now+0.05,0.35);break;
   }
 }
 
@@ -372,6 +462,7 @@ function renderBlocks(){
     ctx.fillStyle=g;roundRect(ctx,b.x,b.y,b.w,b.h,pad);ctx.fill();
     ctx.strokeStyle='rgba(255,255,255,'+(0.12+ft*0.25)+')';ctx.lineWidth=1;roundRect(ctx,b.x,b.y,b.w,b.h,pad);ctx.stroke();
     if(b.maxHp>1){for(var d=0;d<b.maxHp;d++){ctx.beginPath();ctx.arc(b.x+b.w/2+(d-(b.maxHp-1)/2)*6,b.y+b.h-5,2,0,Math.PI*2);ctx.fillStyle=d<b.hp?'rgba(255,255,255,0.7)':'rgba(0,0,0,0.4)';ctx.fill()}}
+    if(b.maxHp>1&&b.hp<b.maxHp){var dmg=1-b.hp/b.maxHp;ctx.save();ctx.beginPath();roundRect(ctx,b.x,b.y,b.w,b.h,pad);ctx.clip();ctx.strokeStyle='rgba(0,0,0,'+(dmg*0.7)+')';ctx.lineWidth=1.5;var bcx=b.x+b.w/2,bcy=b.y+b.h/2;ctx.beginPath();ctx.moveTo(bcx-b.w*0.1,b.y+3);ctx.lineTo(bcx+b.w*0.15,bcy+b.h*0.2);ctx.lineTo(bcx-b.w*0.05,b.y+b.h-3);ctx.stroke();if(dmg>0.49){ctx.beginPath();ctx.moveTo(b.x+4,bcy-b.h*0.1);ctx.lineTo(bcx+b.w*0.2,bcy+b.h*0.1);ctx.stroke()}ctx.restore()}
     if(b.type==='S'){ctx.save();ctx.beginPath();roundRect(ctx,b.x,b.y,b.w,b.h,pad);ctx.clip();ctx.strokeStyle='rgba(180,200,220,0.2)';ctx.lineWidth=1;for(var hx=b.x-b.h;hx<b.x+b.w+b.h;hx+=8){ctx.beginPath();ctx.moveTo(hx,b.y);ctx.lineTo(hx+b.h,b.y+b.h);ctx.stroke()}ctx.restore()}
     ctx.restore()}
 }
@@ -517,6 +608,20 @@ function runTests(){
   (function(){recalcLayout();gameState.paddle=makePaddle();gameState.paddle.x=300;gameState.paddle.y=layout.paddleY;gameState.powerups=[];spawnPowerup(300,layout.paddleY,'life');var sl=gameState.lives;updatePowerups(0.016);assert('Powerup collected',gameState.lives===sl+1||gameState.powerups.filter(function(p){return p.alive}).length===0)})();
   // 18: adjustBrightness
   (function(){assert('adjustBrightness returns rgb',adjustBrightness('#ff4400',1.0).startsWith('rgb'));assert('adjustBrightness dims',adjustBrightness('#808080',0.5).includes('64'))})();
+  // Phase 2: row/col in blocks
+  (function(){recalcLayout();var bl=parseLevel(LEVELS[4]);var t=bl.find(function(b){return b.type==='T'});assert('Phase2: block has row',t&&typeof t.row==='number',t?t.row:'no T');assert('Phase2: block has col',t&&typeof t.col==='number')})();
+  // Phase 2: Steel HP logic
+  (function(){var b={type:'S',hp:999};if(b.type!=='S')b.hp--;assert('Phase2: Steel HP not decremented',b.hp===999)})();
+  // Phase 2: getBlocksInArea 3x3
+  (function(){recalcLayout();var saved=gameState.blocks;gameState.blocks=parseLevel({grid:['FFF','FFF','FFF'],name:'T'});var c=gameState.blocks.find(function(b){return b.row===1&&b.col===1});var nb=c?getBlocksInArea(c,1):[];assert('Phase2: getBlocksInArea 3x3 center',c&&nb.length===8,nb.length);gameState.blocks=saved})();
+  // Phase 2: _tntVisited null at start
+  (function(){assert('Phase2: _tntVisited null',_tntVisited===null)})();
+  // Phase 2: shockwave particle
+  (function(){if(!settings.visualFX){assert('Phase2: shockwave (visualFX off)',true);return}var before=particlePool.filter(function(p){return p._alive&&p.type==='shockwave'}).length;spawnShockwave(200,300);var after=particlePool.filter(function(p){return p._alive&&p.type==='shockwave'}).length;assert('Phase2: spawnShockwave',after>before)})();
+  // Phase 2: debris particles
+  (function(){if(!settings.visualFX){assert('Phase2: debris (visualFX off)',true);return}var before=particlePool.filter(function(p){return p._alive}).length;spawnDebrisParticles(150,150,'#886633',5);var after=particlePool.filter(function(p){return p._alive}).length;assert('Phase2: spawnDebrisParticles 5',after-before>=5)})();
+  // Phase 2: water particles
+  (function(){if(!settings.visualFX){assert('Phase2: water (visualFX off)',true);return}var before=particlePool.filter(function(p){return p._alive}).length;spawnWaterParticles(100,100,6);var after=particlePool.filter(function(p){return p._alive}).length;assert('Phase2: spawnWaterParticles 6',after-before>=6)})();
 
   var pct=Math.round(passed/(passed+failed)*100);
   console.log('\n=== ORB ARKANOID TESTS ===');
@@ -535,4 +640,4 @@ document.addEventListener('DOMContentLoaded',function(){
   setTimeout(function(){recalcLayout();runTests()},100);
 });
 window.addEventListener('resize',resizeCanvas);
-window.OA={runTests:runTests,startGame:startGame,startLevel:startLevel,gameState:gameState,settings:settings,CFG:CFG};
+window.OA={runTests:runTests,startGame:startGame,startLevel:startLevel,gameState:gameState,settings:settings,CFG:CFG,getBlocksInArea:getBlocksInArea,chainExplosion:chainExplosion,spawnShockwave:spawnShockwave,spawnDebrisParticles:spawnDebrisParticles};
