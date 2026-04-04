@@ -90,7 +90,7 @@ function applySettingsUI(){
   var dbm=document.getElementById('btn-debug-main');if(dbm)dbm.textContent='DEBUG: '+(settings.debug?'ON':'OFF');
 }
 
-var gameState={running:false,paused:false,lives:CFG.INIT_LIVES,score:0,combo:0,comboTimer:0,level:0,totalScore:0,levelStartScore:0,blocks:[],balls:[],paddle:null,particles:[],powerups:[],lasers:[],activeEffects:{expand:0,shrink:0,sticky:0,laser:0,slow:0,fireball:0},shake:0,flashAlpha:0,flashColor:'#ffffff',_nameCallback:null,debugMode:false,botEnabled:false};
+var gameState={running:false,paused:false,lives:CFG.INIT_LIVES,score:0,combo:0,comboTimer:0,level:0,totalScore:0,levelStartScore:0,blocks:[],balls:[],paddle:null,particles:[],powerups:[],lasers:[],activeEffects:{expand:0,shrink:0,sticky:0,laser:0,slow:0,fireball:0},shake:0,flashAlpha:0,flashColor:'#ffffff',_nameCallback:null,debugMode:false,botEnabled:false,showHitboxes:false};
 function applyDebugMode(){
   gameState.debugMode=settings.debug;
   document.body.classList.toggle('debug-mode',settings.debug);
@@ -1051,7 +1051,7 @@ function render(){
     ctx.clearRect(0,0,CW,CH);
   }else{renderBackground();renderBlocks()}
   renderLasers();renderPowerups();renderPaddle();renderBalls();renderParticles();renderFlash();
-  if(gameState.debugMode)renderDebugHitboxes();
+  if(gameState.showHitboxes)renderDebugHitboxes();
   ctx.restore();
 }
 
@@ -1116,6 +1116,8 @@ function initButtons(){
   if(nameInput)nameInput.addEventListener('keydown',function(e){if(e.code==='Enter')submitPlayerName()});
   var dbgBot=document.getElementById('dbg-bot'),dbgPrev=document.getElementById('dbg-prev'),dbgNext=document.getElementById('dbg-next');
   if(dbgBot)dbgBot.addEventListener('click',function(){gameState.botEnabled=!gameState.botEnabled;dbgBot.textContent='BOT: '+(gameState.botEnabled?'ON':'OFF')});
+  var dbgHitbox=document.getElementById('dbg-hitbox');
+  if(dbgHitbox)dbgHitbox.addEventListener('click',function(){gameState.showHitboxes=!gameState.showHitboxes;dbgHitbox.textContent='HITBOX: '+(gameState.showHitboxes?'ON':'OFF')});
   if(dbgPrev)dbgPrev.addEventListener('click',function(){if(gameState.level>0){startLevel(gameState.level-1);ensureLoop()}});
   if(dbgNext)dbgNext.addEventListener('click',function(){if(gameState.level<LEVELS.length-1){startLevel(gameState.level+1);ensureLoop()}});
 }
