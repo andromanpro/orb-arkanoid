@@ -34,7 +34,7 @@ var BLOCK_DEFS = {
 
 
 var LEVELS = [
-  {name:'Ignition',     music:'inferno',bg:'fire',  grid:['RRRRRRRRRRRRR','RFFFFFFFFFFFR','RFLLLLLLLLLFR','RFSTGGGGGTSFR','RFLGEIIIEGLFR','RFLGIWWWIGLFR','RFLGEIIIEGLFR','RFSTGGGGGTSFR','RFLLLLLLLLLFR','RRRRRRRRRRRRR']},
+  {name:'Ignition',     music:'inferno',bg:'fire',  grid:['RRRRRRRRRRRRR','RFFFFFFFFFFFR','RFSTGGGGGTSFR','RFLGEIIIEGLFR','RFLGIWWWIGLFR','RFLGEIIIEGLFR','RFSTGGGGGTSFR','RRRRRRRRRRRRR']},
   {name:'Frost Bite',   music:'frost',  bg:'ice',   grid:['IIIIIIIIIIIII','I...........I','I.EEEEEEEEE.I','I.E.......E.I','I.EEEEEEEEE.I','IIIIIIIIIIIII']},
   {name:'Fortress Wall',music:'war',    bg:'dark',  grid:['SS.SSSSSSS.SS','S..SSSSSSS..S','...FFFFFFF...','FFFFFFFFFFF..','FFFFFFFFFFF..','FFFFFFFFFFF..']},
   {name:'Gold Rush',    music:'arcade', bg:'gold',  grid:['....GGGGG....','...GGGGGGG...','..GGGGGGGGG..','..GRGRGRGR...','...RRRRRRR...','....RRRRR....']},
@@ -140,9 +140,13 @@ var layout={blockW:0,blockH:0,gridX:0,gridY:0,gridW:0,gridH:0,paddleY:0,cols:13}
 function recalcLayout(){
   var cols=CFG.BLOCK_COLS,pad=CFG.BLOCK_PAD,totalW=CW*0.92;
   var bw=Math.floor((totalW-pad*(cols+1))/cols);
-  var bh=Math.max(16,Math.floor(bw*0.46));
+  var paddleY=Math.floor(CH*CFG.PADDLE_Y_FRAC);
+  // Cap block height so BLOCK_ROWS_MAX rows always fit between HUD and paddle (60px launch buffer)
+  var availH=paddleY-CFG.BLOCK_TOP_OFFSET-60;
+  var bhMax=Math.floor((availH-pad*(CFG.BLOCK_ROWS_MAX+1))/CFG.BLOCK_ROWS_MAX);
+  var bh=Math.max(14,Math.min(Math.floor(bw*0.46),Math.max(14,bhMax)));
   var gw=bw*cols+pad*(cols+1);
-  layout.blockW=bw;layout.blockH=bh;layout.gridX=Math.floor((CW-gw)/2);layout.gridY=CFG.BLOCK_TOP_OFFSET;layout.gridW=gw;layout.cols=cols;layout.paddleY=Math.floor(CH*CFG.PADDLE_Y_FRAC);
+  layout.blockW=bw;layout.blockH=bh;layout.gridX=Math.floor((CW-gw)/2);layout.gridY=CFG.BLOCK_TOP_OFFSET;layout.gridW=gw;layout.cols=cols;layout.paddleY=paddleY;
 }
 
 function parseLevel(levelDef){
