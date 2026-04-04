@@ -69,7 +69,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 @keyframes popScore{0%{opacity:1;transform:translate(-50%,-50%) scale(1)}60%{opacity:1;transform:translate(-50%,-80%) scale(1.2)}100%{opacity:0;transform:translate(-50%,-110%) scale(.9)}}
 .score-popup{position:fixed;pointer-events:none;z-index:60;font-size:18px;font-weight:700;color:var(--gold);text-shadow:0 0 8px rgba(255,200,0,.6);animation:popScore .8s ease-out forwards;transform:translate(-50%,-50%)}
 #powerup-bar{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:10px;z-index:21;pointer-events:none}
-.powerup-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;border:1.5px solid rgba(255,255,255,.3);position:relative;overflow:hidden}
+.powerup-icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;border:1.5px solid rgba(255,255,255,.3);position:relative;overflow:hidden}
 .powerup-timer{position:absolute;bottom:0;left:0;right:0;height:3px;background:rgba(255,255,255,.6);transform-origin:left}
 #debug-overlay{position:fixed;top:56px;left:8px;font-size:11px;color:rgba(255,255,100,.7);font-family:monospace;pointer-events:none;z-index:99;display:none;line-height:1.4}
 body.debug-mode #debug-overlay{display:block}
@@ -100,7 +100,7 @@ body.debug-mode #debug-panel{display:flex}
     <button class="btn" id="btn-settings" data-i18n="settings">SETTINGS</button>
     <button class="btn" id="btn-debug-main" style="font-size:12px;min-width:140px;opacity:.5">DEBUG: OFF</button>
   </div>
-  <div class="logo-sub" style="position:absolute;bottom:16px;font-size:11px;opacity:.4">v1.1.0</div>
+  <div class="logo-sub" style="position:absolute;bottom:16px;font-size:11px;opacity:.4">v1.2.0</div>
 </div>
 <div id="screen-settings" class="screen">
   <div class="settings-panel">
@@ -119,6 +119,12 @@ body.debug-mode #debug-panel{display:flex}
         <button class="lang-btn" id="trail-plasma" style="color:#cc44ff">PLASMA</button>
         <button class="lang-btn" id="trail-ice" style="color:#44aaff">ICE</button>
       </div>
+    </div>
+    <div class="settings-row"><span class="settings-label" data-i18n="trail_len">TRAIL LEN</span>
+      <div style="display:flex;gap:8px"><button class="lang-btn" id="tlen-short">S</button><button class="lang-btn active" id="tlen-normal">M</button><button class="lang-btn" id="tlen-long">L</button></div>
+    </div>
+    <div style="display:flex;justify-content:center;margin:2px 0 6px">
+      <canvas id="ball-preview" width="184" height="72" style="border-radius:8px;background:#100a05;display:block"></canvas>
     </div>
     <div class="settings-row"><span class="settings-label" data-i18n="difficulty">Difficulty</span>
       <div style="display:flex;gap:8px"><button class="lang-btn" id="diff-easy" data-i18n="easy">Easy</button><button class="lang-btn active" id="diff-normal" data-i18n="normal">Normal</button><button class="lang-btn" id="diff-hard" data-i18n="hard">Hard</button></div>
