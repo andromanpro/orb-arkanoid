@@ -71,6 +71,14 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 .powerup-timer{position:absolute;bottom:0;left:0;right:0;height:3px;background:rgba(255,255,255,.6);transform-origin:left}
 #debug-overlay{position:fixed;top:56px;left:8px;font-size:11px;color:rgba(255,255,100,.7);font-family:monospace;pointer-events:none;z-index:99;display:none;line-height:1.4}
 body.debug-mode #debug-overlay{display:block}
+#screen-levelselect{z-index:10;gap:20px}
+#level-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;max-width:640px;width:92vw}
+.ls-btn{padding:10px 6px;min-height:60px;background:rgba(20,14,8,0.75);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);cursor:pointer;transition:all .2s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-family:inherit}
+.ls-btn:not(.locked):hover{border-color:var(--accent);background:rgba(255,80,0,.1)}
+.ls-btn.locked{opacity:.28;cursor:not-allowed}
+.ls-num{font-size:18px;font-weight:900;color:var(--accent2)}
+.ls-btn.locked .ls-num{color:var(--text2)}
+.ls-name{font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;text-align:center;line-height:1.3}
 </style>
 </head>
 <body>
@@ -82,6 +90,7 @@ body.debug-mode #debug-overlay{display:block}
   </div>
   <div class="menu-buttons">
     <button class="btn btn-primary" id="btn-play" data-i18n="play">PLAY</button>
+    <button class="btn" id="btn-levelselect" data-i18n="level_select">LEVEL SELECT</button>
     <button class="btn" id="btn-leaderboard" data-i18n="leaderboard">LEADERBOARD</button>
     <button class="btn" id="btn-settings" data-i18n="settings">SETTINGS</button>
   </div>
@@ -93,6 +102,7 @@ body.debug-mode #debug-overlay{display:block}
     <div class="settings-row"><span class="settings-label" data-i18n="music">Music</span><button class="toggle-btn active" id="btn-music">ON</button></div>
     <div class="settings-row"><span class="settings-label" data-i18n="sound">Sound</span><button class="toggle-btn active" id="btn-sfx">ON</button></div>
     <div class="settings-row"><span class="settings-label" data-i18n="visual">Visual FX</span><button class="toggle-btn active" id="btn-visual">ON</button></div>
+    <div class="settings-row"><span class="settings-label" data-i18n="show_fps">Show FPS</span><button class="toggle-btn" id="btn-debug">OFF</button></div>
     <div class="settings-row"><span class="settings-label" data-i18n="difficulty">Difficulty</span>
       <div style="display:flex;gap:8px"><button class="lang-btn" id="diff-easy" data-i18n="easy">Easy</button><button class="lang-btn active" id="diff-normal" data-i18n="normal">Normal</button><button class="lang-btn" id="diff-hard" data-i18n="hard">Hard</button></div>
     </div>
@@ -109,14 +119,19 @@ body.debug-mode #debug-overlay{display:block}
   </div>
   <button class="btn" id="btn-back-lb" data-i18n="back">BACK</button>
 </div>
+<div id="screen-levelselect" class="screen">
+  <div class="logo-title" style="font-size:clamp(20px,4vw,34px);margin-bottom:4px" data-i18n="level_select">LEVEL SELECT</div>
+  <div id="level-grid"></div>
+  <button class="btn" id="btn-back-levelselect" data-i18n="back" style="margin-top:8px">BACK</button>
+</div>
 <div id="screen-game" class="screen">
   <canvas id="game-canvas"></canvas>
   <div id="hud">
     <div class="hud-group"><div class="lives-display" id="lives-display"></div></div>
     <div class="hud-group" style="flex-direction:column;align-items:center;gap:2px"><div class="hud-label" data-i18n="score">Score</div><div class="hud-value hud-score" id="hud-score">0</div></div>
     <div class="hud-group" style="flex-direction:column;align-items:flex-end;gap:2px"><div class="hud-label" data-i18n="level">Level</div><div class="hud-value" id="hud-level">1 / 15</div></div>
+    <div style="display:flex;gap:6px;pointer-events:all;margin-left:6px"><button class="hud-btn" id="btn-pause" title="Pause">⏸</button><button class="hud-btn" id="btn-mute" title="Mute">🔊</button></div>
   </div>
-  <div id="hud-btns"><button class="hud-btn" id="btn-pause" title="Pause">⏸</button><button class="hud-btn" id="btn-mute" title="Mute">🔊</button></div>
   <div id="combo-display"></div>
   <div id="powerup-bar"></div>
   <div id="debug-overlay"></div>
