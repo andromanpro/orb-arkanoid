@@ -94,18 +94,23 @@ body.debug-mode #debug-panel{display:flex}
   <div class="menu-buttons">
     <button class="btn btn-primary" id="btn-play" data-i18n="play">PLAY</button>
     <button class="btn" id="btn-levelselect" data-i18n="level_select">LEVEL SELECT</button>
+    <button class="btn" id="btn-powerups-main" data-i18n="powerups_title">POWER-UPS</button>
     <button class="btn" id="btn-leaderboard" data-i18n="leaderboard">LEADERBOARD</button>
     <button class="btn" id="btn-settings" data-i18n="settings">SETTINGS</button>
+    <button class="btn" id="btn-debug-main" style="font-size:12px;min-width:140px;opacity:.5">DEBUG: OFF</button>
   </div>
   <div class="logo-sub" style="position:absolute;bottom:16px;font-size:11px;opacity:.4">v1.0.0</div>
 </div>
 <div id="screen-settings" class="screen">
   <div class="settings-panel">
     <div class="settings-title" data-i18n="settings">Settings</div>
+    <div class="settings-row"><span class="settings-label" data-i18n="show_fps">DEBUG</span><button class="toggle-btn" id="btn-debug">OFF</button></div>
     <div class="settings-row"><span class="settings-label" data-i18n="music">Music</span><button class="toggle-btn active" id="btn-music">ON</button></div>
     <div class="settings-row"><span class="settings-label" data-i18n="sound">Sound</span><button class="toggle-btn active" id="btn-sfx">ON</button></div>
     <div class="settings-row"><span class="settings-label" data-i18n="visual">Visual FX</span><button class="toggle-btn active" id="btn-visual">ON</button></div>
-    <div class="settings-row"><span class="settings-label" data-i18n="show_fps">Show FPS</span><button class="toggle-btn" id="btn-debug">OFF</button></div>
+    <div class="settings-row"><span class="settings-label" data-i18n="orb_size">ORB SIZE</span>
+      <div style="display:flex;gap:8px"><button class="lang-btn" id="size-small">S</button><button class="lang-btn active" id="size-normal">M</button><button class="lang-btn" id="size-large">L</button></div>
+    </div>
     <div class="settings-row"><span class="settings-label" data-i18n="difficulty">Difficulty</span>
       <div style="display:flex;gap:8px"><button class="lang-btn" id="diff-easy" data-i18n="easy">Easy</button><button class="lang-btn active" id="diff-normal" data-i18n="normal">Normal</button><button class="lang-btn" id="diff-hard" data-i18n="hard">Hard</button></div>
     </div>
@@ -121,6 +126,13 @@ body.debug-mode #debug-panel{display:flex}
     <table class="lb-table"><thead><tr><th>#</th><th data-i18n="name">Name</th><th data-i18n="level_short">Lvl</th><th data-i18n="score">Score</th></tr></thead><tbody id="lb-body"></tbody></table>
   </div>
   <button class="btn" id="btn-back-lb" data-i18n="back">BACK</button>
+</div>
+<div id="screen-powerups" class="screen" style="z-index:10;gap:20px">
+  <div class="lb-panel" style="max-height:75vh;overflow-y:auto">
+    <div class="lb-title" data-i18n="powerups_title">POWER-UPS</div>
+    <div id="powerup-list" style="display:flex;flex-direction:column;gap:14px"></div>
+  </div>
+  <button class="btn" id="btn-back-powerups" data-i18n="back">BACK</button>
 </div>
 <div id="screen-levelselect" class="screen">
   <div class="logo-title" style="font-size:clamp(20px,4vw,34px);margin-bottom:4px" data-i18n="level_select">LEVEL SELECT</div>
