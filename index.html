@@ -100,10 +100,11 @@ body.debug-mode #debug-panel{display:flex}
     <button class="btn" id="btn-settings" data-i18n="settings">SETTINGS</button>
     <button class="btn" id="btn-debug-main" style="font-size:12px;min-width:140px;opacity:.5">DEBUG: OFF</button>
   </div>
-  <div class="logo-sub" style="position:absolute;bottom:16px;font-size:11px;opacity:.4">v1.2.0</div>
+  <div class="logo-sub" style="position:absolute;bottom:16px;font-size:11px;opacity:.4">v1.3.0</div>
 </div>
 <div id="screen-settings" class="screen">
-  <div class="settings-panel">
+  <canvas id="ball-preview" style="position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;z-index:0"></canvas>
+  <div class="settings-panel" style="position:relative;z-index:1">
     <div class="settings-title" data-i18n="settings">Settings</div>
     <div class="settings-row"><span class="settings-label" data-i18n="show_fps">DEBUG</span><button class="toggle-btn" id="btn-debug">OFF</button></div>
     <div class="settings-row"><span class="settings-label" data-i18n="music">Music</span><button class="toggle-btn active" id="btn-music">ON</button></div>
@@ -122,9 +123,6 @@ body.debug-mode #debug-panel{display:flex}
     </div>
     <div class="settings-row"><span class="settings-label" data-i18n="trail_len">TRAIL LEN</span>
       <div style="display:flex;gap:8px"><button class="lang-btn" id="tlen-short">S</button><button class="lang-btn active" id="tlen-normal">M</button><button class="lang-btn" id="tlen-long">L</button></div>
-    </div>
-    <div style="display:flex;justify-content:center;margin:2px 0 6px">
-      <canvas id="ball-preview" width="184" height="72" style="border-radius:8px;background:#100a05;display:block"></canvas>
     </div>
     <div class="settings-row"><span class="settings-label" data-i18n="difficulty">Difficulty</span>
       <div style="display:flex;gap:8px"><button class="lang-btn" id="diff-easy" data-i18n="easy">Easy</button><button class="lang-btn active" id="diff-normal" data-i18n="normal">Normal</button><button class="lang-btn" id="diff-hard" data-i18n="hard">Hard</button></div>
