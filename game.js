@@ -127,7 +127,7 @@ function renderLevelSelect(){
     var lNames=t('level_names');var lName=(lNames&&lNames[idx])||lvl.name;
     btn.innerHTML='<span class="ls-num">'+(idx+1)+'</span><span class="ls-name">'+lName+'</span>';
     btn.disabled=!unlocked;
-    if(unlocked)btn.addEventListener('click',function(){ensureAudio();showScreen('screen-game');startLevel(idx);ensureLoop()});
+    if(unlocked)btn.addEventListener('click',function(){ensureAudio();showScreen('screen-game');resizeCanvas();startLevel(idx);ensureLoop()});
     grid.appendChild(btn);
   })(i)}
 }
@@ -161,7 +161,7 @@ function ensureLoop(){if(!animFrame){lastTime=performance.now();animFrame=reques
 
 var canvas,ctx,CW=0,CH=0;
 function initCanvas(){canvas=document.getElementById('game-canvas');ctx=canvas.getContext('2d');initGL();resizeCanvas()}
-function resizeCanvas(){var wrap=document.getElementById('game-wrap');CW=wrap?wrap.offsetWidth:window.innerWidth;CH=window.innerHeight;canvas.width=CW;canvas.height=CH;if(glReady)glResize();if(gameState.running)recalcLayout()}
+function resizeCanvas(){var wrap=document.getElementById('game-wrap');var ww=wrap?wrap.offsetWidth:0;CW=(ww>10?ww:Math.min(window.innerWidth,960));CH=window.innerHeight;canvas.width=CW;canvas.height=CH;if(glReady)glResize();if(gameState.running)recalcLayout()}
 
 var layout={blockW:0,blockH:0,gridX:0,gridY:0,gridW:0,gridH:0,paddleY:0,cols:13};
 
@@ -552,7 +552,7 @@ function startLevel(idx){
 
 function startGame(){
   gameState.score=0;gameState.totalScore=0;gameState.lives=CFG.INIT_LIVES;gameState.running=false;gameState.paused=false;
-  showScreen('screen-game');startLevel(0);if(!animFrame){lastTime=performance.now();animFrame=requestAnimationFrame(gameLoop)}
+  showScreen('screen-game');resizeCanvas();startLevel(0);if(!animFrame){lastTime=performance.now();animFrame=requestAnimationFrame(gameLoop)}
 }
 
 function loseLife(){
@@ -1075,8 +1075,8 @@ function render(){
 
 var keys={},mouseX=0;
 function initInput(){
-  document.addEventListener('mousemove',function(e){mouseX=e.clientX;if(currentScreen==='screen-game'&&gameState.paddle&&!gameState.botEnabled)gameState.paddle.targetX=e.clientX});
-  document.addEventListener('touchmove',function(e){if(currentScreen!=='screen-game')return;e.preventDefault();var t=e.touches[0];if(t&&gameState.paddle&&!gameState.botEnabled)gameState.paddle.targetX=t.clientX},{passive:false});
+  document.addEventListener('mousemove',function(e){var wrap=document.getElementById('game-wrap');var ox=wrap?wrap.getBoundingClientRect().left:0;mouseX=e.clientX-ox;if(currentScreen==='screen-game'&&gameState.paddle&&!gameState.botEnabled)gameState.paddle.targetX=e.clientX-ox});
+  document.addEventListener('touchmove',function(e){if(currentScreen!=='screen-game')return;e.preventDefault();var t=e.touches[0];if(t&&gameState.paddle&&!gameState.botEnabled){var wrap=document.getElementById('game-wrap');var ox=wrap?wrap.getBoundingClientRect().left:0;gameState.paddle.targetX=t.clientX-ox}},{passive:false});
   document.addEventListener('touchstart',function(e){ensureAudio();if(currentScreen==='screen-game')handleGameTap()});
   document.addEventListener('mousedown',function(e){ensureAudio();if(currentScreen==='screen-game'&&e.button===0)handleGameTap()});
   document.addEventListener('keydown',function(e){keys[e.code]=true;
