@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <!-- Glass base gradient -->
+    <radialGradient id="glass" cx="42%" cy="38%" r="58%">
+      <stop offset="0%" stop-color="#1e2a3a"/>
+      <stop offset="100%" stop-color="#060c14"/>
+    </radialGradient>
+    <!-- Liquid fill gradient -->
+    <radialGradient id="liq" cx="50%" cy="70%" r="55%">
+      <stop offset="0%" stop-color="#ff6a00"/>
+      <stop offset="60%" stop-color="#cc2200"/>
+      <stop offset="100%" stop-color="#550800"/>
+    </radialGradient>
+    <!-- Glow filter -->
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="1.4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <!-- Clip to circle -->
+    <clipPath id="orb"><circle cx="16" cy="16" r="14.5"/></clipPath>
+  </defs>
+
+  <!-- Outer glow ring -->
+  <circle cx="16" cy="16" r="15" fill="none" stroke="#ff4400" stroke-width="1.5" opacity="0.35"/>
+  <circle cx="16" cy="16" r="14.5" fill="url(#glass)"/>
+
+  <!-- Liquid body (clipped to orb) -->
+  <g clip-path="url(#orb)">
+    <!-- Deep liquid layer -->
+    <ellipse cx="16" cy="22" rx="14.5" ry="11" fill="#881100" opacity="0.9"/>
+    <!-- Surface wave shape -->
+    <path d="M1.5 18 Q5 15 9 17.5 Q13 20 16 17 Q19 14 23 16.5 Q27 19 30.5 17 L30.5 32 L1.5 32Z"
+          fill="url(#liq)" opacity="0.95"/>
+    <!-- Bright surface highlight -->
+    <path d="M1.5 18 Q5 15 9 17.5 Q13 20 16 17 Q19 14 23 16.5 Q27 19 30.5 17 L30.5 19 Q27 21 23 18.5 Q19 16 16 19 Q13 22 9 19.5 Q5 17 1.5 20Z"
+          fill="#ff8833" opacity="0.5"/>
+    <!-- SSS centre glow -->
+    <ellipse cx="16" cy="22" rx="8" ry="5" fill="#ff6600" opacity="0.18"/>
+  </g>
+
+  <!-- Fresnel rim -->
+  <circle cx="16" cy="16" r="14.5" fill="none" stroke="#ff5500" stroke-width="2.5" opacity="0.22"/>
+  <circle cx="16" cy="16" r="14.5" fill="none" stroke="#ffffff" stroke-width="0.6" opacity="0.07"/>
+
+  <!-- Specular highlight (top-left) -->
+  <ellipse cx="11" cy="10" rx="4.5" ry="3" fill="white" opacity="0.22" transform="rotate(-25 11 10)"/>
+  <ellipse cx="10.5" cy="9.5" rx="2" ry="1.2" fill="white" opacity="0.45" transform="rotate(-25 10.5 9.5)"/>
+</svg>
