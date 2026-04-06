@@ -2062,7 +2062,7 @@ function _botPredictX(ball,paddle){
   return predictX;
 }
 function updateDebugBot(){
-  if(!gameState.debugMode||!gameState.botEnabled)return;
+  if(!gameState.debugMode||!gameState.botEnabled||currentScreen!=='screen-game')return;
   var lo=document.getElementById('overlay-level');
   if(lo&&lo.classList.contains('visible')){dismissLevelOverlay();return}
   var vo=document.getElementById('overlay-victory');
