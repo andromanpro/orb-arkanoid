@@ -1606,6 +1606,57 @@ function renderBlocks(){
     ctx.restore()}
 }
 
+function renderExplosiveWarnings(){
+  var now=performance.now()*0.001;
+  for(var i=0;i<gameState.blocks.length;i++){
+    var b=gameState.blocks[i];if(!b.alive)continue;
+    var cx=b.cx,cy=b.cy,r=b.orbR;
+    if(b.type==='T'){
+      // TNT: rotating dashed danger ring + 3 staggered radar pings
+      ctx.save();
+      // Rotating dashed ring
+      ctx.translate(cx,cy);ctx.rotate(now*2.2);
+      ctx.strokeStyle='rgba(255,180,0,0.7)';ctx.lineWidth=1.5;
+      ctx.setLineDash([4,4]);ctx.beginPath();ctx.arc(0,0,r+4,0,Math.PI*2);ctx.stroke();
+      ctx.setLineDash([]);
+      // 3 staggered radar pings expanding outward
+      for(var p=0;p<3;p++){
+        var phase=((now*1.4+p*0.33)%1);
+        var pr=r*(0.6+phase*0.9);var pa=1-phase;
+        ctx.strokeStyle='rgba(255,140,0,'+pa*0.55+')';ctx.lineWidth=1.5*(1-phase*0.7);
+        ctx.beginPath();ctx.arc(0,0,pr,0,Math.PI*2);ctx.stroke();
+      }
+      // 4 warning triangles at corners
+      ctx.fillStyle='rgba(255,200,0,0.75)';
+      for(var t=0;t<4;t++){var ta=t*Math.PI/2+now*1.1;var tx=Math.cos(ta)*(r+10);var ty=Math.sin(ta)*(r+10);var ts=3.5;
+        ctx.beginPath();ctx.moveTo(tx,ty-ts);ctx.lineTo(tx+ts,ty+ts);ctx.lineTo(tx-ts,ty+ts);ctx.closePath();ctx.fill();}
+      ctx.restore();
+    } else if(b.type==='B'){
+      // BOSS: pulsing segmented danger aura + orbiting sparks
+      ctx.save();ctx.translate(cx,cy);
+      // Outer pulsing halo
+      var pulse=0.82+0.18*Math.sin(now*3.5);
+      var grad=ctx.createRadialGradient(0,0,r*pulse,0,0,r*pulse+14);
+      grad.addColorStop(0,'rgba(255,0,40,0.35)');grad.addColorStop(1,'rgba(255,0,40,0)');
+      ctx.fillStyle=grad;ctx.beginPath();ctx.arc(0,0,r*pulse+14,0,Math.PI*2);ctx.fill();
+      // 6 rotating danger arc segments
+      for(var s=0;s<6;s++){var sa=s*Math.PI/3+now*1.5;var sLen=Math.PI/5;
+        ctx.strokeStyle='rgba(255,30,60,'+(0.5+0.3*Math.sin(now*4+s))+')';ctx.lineWidth=2.5;
+        ctx.beginPath();ctx.arc(0,0,r+7,sa,sa+sLen);ctx.stroke();
+      }
+      // Counter-rotating inner ring
+      ctx.rotate(-now*2.0);ctx.strokeStyle='rgba(255,80,120,0.4)';ctx.lineWidth=1;
+      ctx.setLineDash([3,6]);ctx.beginPath();ctx.arc(0,0,r+2,0,Math.PI*2);ctx.stroke();
+      ctx.setLineDash([]);
+      // 4 orbiting sparks
+      ctx.fillStyle='rgba(255,60,80,0.85)';
+      for(var k=0;k<4;k++){var ka=k*Math.PI/2+now*2.8;var kr=r+9+3*Math.sin(now*5+k);
+        ctx.beginPath();ctx.arc(Math.cos(ka)*kr,Math.sin(ka)*kr,2.5,0,Math.PI*2);ctx.fill();}
+      ctx.restore();
+    }
+  }
+}
+
 function renderPaddle(){
   var p=gameState.paddle,cx=p.x,cy=p.y,w=p.width,h=p.height;
   var now=performance.now()*0.001;
@@ -2157,7 +2208,7 @@ function render(){
     ctx.clearRect(0,0,CW,CH);
     renderOrbCracks();renderBossRings();
   }else{renderBackground();renderBlocks()}
-  renderLasers();renderPowerups();renderPaddle();renderBalls();renderParticles();renderOrbShots();renderDangerZone();
+  renderExplosiveWarnings();renderLasers();renderPowerups();renderPaddle();renderBalls();renderParticles();renderOrbShots();renderDangerZone();
   if(gameState.showHitboxes&&gameState.running&&!gameState.paused){gameState.balls.forEach(function(b){if(b.alive&&!b.stuck)renderBallTrajectory(b);});}
   renderEdges();renderShield();renderFloatTexts();renderFlash();renderTimerHUD();
   if(gameState.showHitboxes)renderDebugHitboxes();
