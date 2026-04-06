@@ -2491,7 +2491,7 @@ function runTests(){
   // Phase 2: water particles
   (function(){if(!settings.visualFX){assert('Phase2: water (visualFX off)',true);return}var before=particlePool.filter(function(p){return p._alive}).length;spawnWaterParticles(100,100,6);var after=particlePool.filter(function(p){return p._alive}).length;assert('Phase2: spawnWaterParticles 6',after-before>=6)})();
   // Phase 3: NOTES + MUSIC_THEMES
-  (function(){assert('Phase3: NOTES.D3',Math.abs(NOTES.D3-146.8)<0.1);assert('Phase3: 4 themes',Object.keys(MUSIC_THEMES).length===4);assert('Phase3: theme 16 steps',Object.keys(MUSIC_THEMES).every(function(k){return MUSIC_THEMES[k].bass.length===16}))})();
+  (function(){assert('Phase3: NOTES.D3',Math.abs(NOTES.D3-146.8)<0.1);assert('Phase3: 7 themes',Object.keys(MUSIC_THEMES).length===7);assert('Phase3: theme 16 steps',Object.keys(MUSIC_THEMES).every(function(k){return MUSIC_THEMES[k].bass.length===16}))})();
   // Phase 3: musicStart/Stop
   (function(){try{ensureAudio();var wasOn=settings.musicOn;settings.musicOn=true;musicStart('war');assert('Phase3: musicStart theme',musicState.theme==='war');assert('Phase3: musicStart playing',musicState.playing);musicStop();assert('Phase3: musicStop',!musicState.playing);settings.musicOn=wasOn}catch(e){assert('Phase3: music',false,e.message)}})();
   // Phase 3: updateBackground runs
