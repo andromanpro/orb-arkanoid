@@ -1632,26 +1632,36 @@ function renderExplosiveWarnings(){
         ctx.beginPath();ctx.moveTo(tx,ty-ts);ctx.lineTo(tx+ts,ty+ts);ctx.lineTo(tx-ts,ty+ts);ctx.closePath();ctx.fill();}
       ctx.restore();
     } else if(b.type==='B'){
-      // BOSS: pulsing segmented danger aura + orbiting sparks
+      // BOSS: atom model — 3 electron orbits at 0°/60°/120° + pulsing nucleus glow
       ctx.save();ctx.translate(cx,cy);
-      // Outer pulsing halo
-      var pulse=0.82+0.18*Math.sin(now*3.5);
-      var grad=ctx.createRadialGradient(0,0,r*pulse,0,0,r*pulse+14);
-      grad.addColorStop(0,'rgba(255,0,40,0.35)');grad.addColorStop(1,'rgba(255,0,40,0)');
-      ctx.fillStyle=grad;ctx.beginPath();ctx.arc(0,0,r*pulse+14,0,Math.PI*2);ctx.fill();
-      // 6 rotating danger arc segments
-      for(var s=0;s<6;s++){var sa=s*Math.PI/3+now*1.5;var sLen=Math.PI/5;
-        ctx.strokeStyle='rgba(255,30,60,'+(0.5+0.3*Math.sin(now*4+s))+')';ctx.lineWidth=2.5;
-        ctx.beginPath();ctx.arc(0,0,r+7,sa,sa+sLen);ctx.stroke();
+      var ra=r+13,rb=Math.round((r+13)*0.32);
+      // Nucleus pulsing halo
+      var npulse=0.7+0.3*Math.sin(now*4.2);
+      var ng=ctx.createRadialGradient(0,0,0,0,0,r*npulse+7);
+      ng.addColorStop(0,'rgba(255,80,140,0.45)');ng.addColorStop(1,'rgba(255,0,60,0)');
+      ctx.fillStyle=ng;ctx.beginPath();ctx.arc(0,0,r*npulse+7,0,Math.PI*2);ctx.fill();
+      // 3 orbital rings + electrons
+      var oTilts=[0,Math.PI/3,2*Math.PI/3];
+      var oSpeeds=[1.3,-1.0,1.7];
+      var eCols=['rgba(255,110,160,0.92)','rgba(255,210,80,0.92)','rgba(130,180,255,0.92)'];
+      for(var o=0;o<3;o++){
+        var tilt=oTilts[o];
+        // Draw ellipse ring (rotate + scale trick)
+        ctx.save();ctx.rotate(tilt);ctx.scale(1,rb/ra);
+        ctx.strokeStyle='rgba(255,60,110,0.22)';ctx.lineWidth=1.2;
+        ctx.beginPath();ctx.arc(0,0,ra,0,Math.PI*2);ctx.stroke();
+        ctx.restore();
+        // Electron position on tilted ellipse
+        var ea=now*oSpeeds[o]*2.8;
+        var ex=ra*Math.cos(ea)*Math.cos(tilt)-rb*Math.sin(ea)*Math.sin(tilt);
+        var ey=ra*Math.cos(ea)*Math.sin(tilt)+rb*Math.sin(ea)*Math.cos(tilt);
+        // Electron glow
+        var eg=ctx.createRadialGradient(ex,ey,0,ex,ey,6);
+        eg.addColorStop(0,eCols[o]);eg.addColorStop(1,'rgba(255,60,100,0)');
+        ctx.fillStyle=eg;ctx.beginPath();ctx.arc(ex,ey,6,0,Math.PI*2);ctx.fill();
+        // Electron dot
+        ctx.fillStyle=eCols[o];ctx.beginPath();ctx.arc(ex,ey,2.2,0,Math.PI*2);ctx.fill();
       }
-      // Counter-rotating inner ring
-      ctx.rotate(-now*2.0);ctx.strokeStyle='rgba(255,80,120,0.4)';ctx.lineWidth=1;
-      ctx.setLineDash([3,6]);ctx.beginPath();ctx.arc(0,0,r+2,0,Math.PI*2);ctx.stroke();
-      ctx.setLineDash([]);
-      // 4 orbiting sparks
-      ctx.fillStyle='rgba(255,60,80,0.85)';
-      for(var k=0;k<4;k++){var ka=k*Math.PI/2+now*2.8;var kr=r+9+3*Math.sin(now*5+k);
-        ctx.beginPath();ctx.arc(Math.cos(ka)*kr,Math.sin(ka)*kr,2.5,0,Math.PI*2);ctx.fill();}
       ctx.restore();
     }
   }
