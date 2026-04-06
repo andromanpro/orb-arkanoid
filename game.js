@@ -204,38 +204,55 @@ var ORB_DESC={
   B:{en:'\u2620 8 hp Boss. Shoots at paddle. Chain explosion on death',ru:'\u2620 8 \u0445\u043f \u0411\u043e\u0441\u0441. \u0421\u0442\u0440\u0435\u043b\u044f\u0435\u0442 \u043f\u043e \u043f\u043b\u0430\u0442\u0444\u043e\u0440\u043c\u0435. \u0412\u0437\u0440\u044b\u0432 \u043f\u0440\u0438 \u0441\u043c\u0435\u0440\u0442\u0438'}
 };
 
+function captureOrbPreviews(){
+  // Render each orb type using the real WebGL shader → readPixels → canvas
+  if(!gl||!glReady||!glProg||!glQuadVAO)return {};
+  var sz=48,previews={};
+  var proj=glOrtho(sz,sz);
+  gl.viewport(0,0,sz,sz);
+  gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
+  gl.useProgram(glProg);gl.bindVertexArray(glQuadVAO.vao);
+  gl.uniformMatrix4fv(glU.proj,false,proj);
+  gl.uniform2f(glU.pos,0,0);gl.uniform2f(glU.size,sz,sz);
+  gl.uniform1f(glU.orbR,sz/2);
+  gl.uniform1i(glU.cols,6);gl.uniform1f(glU.hit,0.0);gl.uniform1f(glU.alpha,1.0);
+  gl.uniform1fv(glU.wh,new Float32Array(6));
+  var t=performance.now()/1000;
+  Object.keys(LIQUID_TYPES).forEach(function(k){
+    var tc=LIQUID_TYPES[k];
+    gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.uniform1f(glU.fill,tc.fill);gl.uniform1f(glU.amp,tc.amp);
+    gl.uniform1f(glU.spd,tc.spd);gl.uniform1f(glU.time,t);
+    gl.uniform3fv(glU.cs,new Float32Array(tc.surface));
+    gl.uniform3fv(glU.cd,new Float32Array(tc.deep));
+    gl.uniform3fv(glU.cg,new Float32Array(tc.glow));
+    gl.drawElements(gl.TRIANGLES,6,gl.UNSIGNED_SHORT,0);
+    // readPixels — works synchronously before browser composite
+    var px=new Uint8Array(sz*sz*4);
+    gl.readPixels(0,0,sz,sz,gl.RGBA,gl.UNSIGNED_BYTE,px);
+    // Flip Y: WebGL origin = bottom-left, canvas origin = top-left
+    var flip=new Uint8ClampedArray(sz*sz*4);
+    for(var y=0;y<sz;y++){var s=(sz-1-y)*sz*4,d=y*sz*4;flip.set(px.subarray(s,s+sz*4),d);}
+    var pc=document.createElement('canvas');pc.width=pc.height=sz;
+    pc.getContext('2d').putImageData(new ImageData(flip,sz,sz),0,0);
+    previews[k]=pc;
+  });
+  gl.viewport(0,0,CW,CH);gl.bindVertexArray(null);
+  return previews;
+}
+
 function renderOrbInfo(){
   var list=document.getElementById('info-orbs-list');if(!list)return;list.innerHTML='';
   var lang=settings.language||'en';
+  var previews=captureOrbPreviews();
   Object.keys(BLOCK_DEFS).forEach(function(k){
     var def=BLOCK_DEFS[k];
     var desc=(ORB_DESC[k]&&(ORB_DESC[k][lang]||ORB_DESC[k].en))||def.name;
     var hpStr=def.hp+' hp';
     var row=document.createElement('div');row.style.cssText='display:flex;align-items:center;gap:12px';
-    // Mini-orb canvas preview
-    var oc=document.createElement('canvas');oc.width=44;oc.height=44;oc.style.cssText='min-width:44px;border-radius:50%';
-    (function(canvas,blockDef){
-      var rc=canvas.getContext('2d'),sz=22;
-      // Deep layer
-      var g=rc.createRadialGradient(sz*.62,sz*.42,0,sz,sz,sz);
-      g.addColorStop(0,blockDef.color+'ee');g.addColorStop(0.55,blockDef.color+'88');g.addColorStop(1,'#00000099');
-      rc.fillStyle=g;rc.beginPath();rc.arc(sz,sz,sz-1,0,Math.PI*2);rc.fill();
-      // Liquid surface wave hint
-      rc.save();rc.beginPath();rc.ellipse(sz,sz*1.08,sz-2,sz*0.52,0,Math.PI,0);rc.closePath();
-      var lg=rc.createLinearGradient(0,sz,0,sz*2);lg.addColorStop(0,blockDef.color+'cc');lg.addColorStop(1,blockDef.color+'22');
-      rc.fillStyle=lg;rc.fill();rc.restore();
-      // Fresnel rim glow
-      var rim=rc.createRadialGradient(sz,sz,sz*0.65,sz,sz,sz-0.5);
-      rim.addColorStop(0,'rgba(0,0,0,0)');rim.addColorStop(1,blockDef.color+'77');
-      rc.fillStyle=rim;rc.beginPath();rc.arc(sz,sz,sz-1,0,Math.PI*2);rc.fill();
-      // Specular highlight
-      var sp=rc.createRadialGradient(sz*.56,sz*.38,0,sz*.6,sz*.42,sz*.42);
-      sp.addColorStop(0,'rgba(255,255,255,0.55)');sp.addColorStop(1,'rgba(255,255,255,0)');
-      rc.fillStyle=sp;rc.beginPath();rc.arc(sz,sz,sz-1,0,Math.PI*2);rc.fill();
-      // Thin outer ring
-      rc.strokeStyle=blockDef.color;rc.lineWidth=1.2;rc.globalAlpha=0.55;
-      rc.beginPath();rc.arc(sz,sz,sz-1.5,0,Math.PI*2);rc.stroke();rc.globalAlpha=1;
-    })(oc,def);
+    var oc=previews[k];
+    if(!oc){oc=document.createElement('canvas');oc.width=oc.height=48;}
+    oc.style.cssText='min-width:48px;height:48px;border-radius:50%';
     row.appendChild(oc);
     var info=document.createElement('div');info.style.cssText='flex:1';
     info.innerHTML='<div style="font-weight:700;color:'+def.color+';font-size:13px;text-transform:uppercase">'+def.name+'</div>'
