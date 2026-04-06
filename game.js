@@ -224,7 +224,7 @@ function recalcLayout(){
   var cellSize=Math.max(14,Math.min(bwRaw,Math.max(14,bhMax)));
   var gw=cellSize*cols+pad*(cols+1);
   layout.blockW=cellSize;layout.blockH=cellSize;layout.gridX=Math.max(0,Math.floor((CW-gw)/2));layout.gridY=CFG.BLOCK_TOP_OFFSET;layout.gridW=gw;layout.cols=cols;layout.paddleY=paddleY;
-  var puBar=document.getElementById('powerup-bar');if(puBar)puBar.style.bottom=(CH-paddleY-CFG.PADDLE_H-10)+'px';
+  var puBar=document.getElementById('powerup-bar');if(puBar)puBar.style.bottom=Math.max(4,CH-paddleY-CFG.PADDLE_H/2-44)+'px';
 }
 
 function parseLevel(levelDef){
