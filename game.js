@@ -11,7 +11,7 @@ var CFG = {
   BLOCK_TOP_OFFSET:72, BLOCK_AREA_H_FRAC:0.48, PADDLE_Y_FRAC:0.92,
   MAX_PARTICLES:2000, COMBO_WINDOW:1500, POWERUP_FALL_SPEED:90,
   STORAGE_KEY:'orb-arkanoid-v1', STORAGE_LB_KEY:'orb-arkanoid-lb-v1',
-  LASER_SPEED:600, VERSION:'1.7.1'
+  LASER_SPEED:600, VERSION:'1.8.0'
 };
 
 var DIFFICULTY = {
@@ -123,6 +123,12 @@ function applySettingsUI(){
   ['few','normal','many'].forEach(function(r){var e=document.getElementById('pu-'+r);if(e)e.classList.toggle('active',settings.powerupRate===r)});
   var dbm=document.getElementById('btn-debug-main');if(dbm)dbm.textContent='DEBUG: '+(settings.debug?'ON':'OFF');
   ['classic','timed','endless'].forEach(function(m){var el=document.getElementById('mode-'+m);if(el)el.classList.toggle('active',(settings.gameMode||'classic')===m)});
+  // Pause overlay quick-settings sync
+  var pm=document.getElementById('p-btn-music'),ps=document.getElementById('p-btn-sfx'),pv=document.getElementById('p-btn-visual');
+  if(pm){pm.classList.toggle('active',settings.musicOn);pm.textContent=settings.musicOn?t('on'):t('off')}
+  if(ps){ps.classList.toggle('active',settings.sfxOn);ps.textContent=settings.sfxOn?t('on'):t('off')}
+  if(pv){pv.classList.toggle('active',settings.visualFX);pv.textContent=settings.visualFX?t('on'):t('off')}
+  ['easy','normal','hard'].forEach(function(d){var e=document.getElementById('p-diff-'+d);if(e)e.classList.toggle('active',settings.difficulty===d)});
 }
 
 var gameState={running:false,paused:false,lives:CFG.INIT_LIVES,score:0,combo:0,comboTimer:0,level:0,totalScore:0,levelStartScore:0,blocks:[],balls:[],paddle:null,particles:[],powerups:[],lasers:[],activeEffects:{expand:0,shrink:0,sticky:0,laser:0,slow:0,fireball:0,iceball:0,goldball:0,lavaball:0,echo:0,gravity:0},shake:0,flashAlpha:0,flashColor:'#ffffff',_nameCallback:null,debugMode:false,botEnabled:false,showHitboxes:false,floatTexts:[],shieldActive:false,gameMode:'classic',tAttackTimer:0,_procLevels:{}};
@@ -2254,6 +2260,10 @@ function initButtons(){
   document.getElementById('btn-pause').addEventListener('click',function(){togglePause()});
   document.getElementById('btn-mute').addEventListener('click',function(){var willMute=settings.sfxOn||settings.musicOn;settings.sfxOn=!settings.sfxOn;settings.musicOn=!settings.musicOn;var b=document.getElementById('btn-mute');if(b)b.textContent=(settings.sfxOn||settings.musicOn)?'\uD83D\uDD0A':'\uD83D\uDD07';if(willMute){musicStop()}else{var lvl=LEVELS[gameState.level];if(lvl&&gameState.running&&!gameState.paused)musicStart(lvl.music||'inferno')}saveSettings()});
   document.getElementById('btn-resume').addEventListener('click',function(){togglePause()});
+  document.getElementById('p-btn-music').addEventListener('click',function(){settings.musicOn=!settings.musicOn;if(!settings.musicOn)musicStop();else if(gameState.paused){var _l=LEVELS[gameState.level];if(_l)musicStart(_l.music||'inferno');musicStop();}applySettingsUI();saveSettings()});
+  document.getElementById('p-btn-sfx').addEventListener('click',function(){settings.sfxOn=!settings.sfxOn;applySettingsUI();saveSettings()});
+  document.getElementById('p-btn-visual').addEventListener('click',function(){settings.visualFX=!settings.visualFX;applySettingsUI();saveSettings()});
+  ['easy','normal','hard'].forEach(function(d){var e=document.getElementById('p-diff-'+d);if(e)e.addEventListener('click',function(){settings.difficulty=d;applySettingsUI();saveSettings()})});
   document.getElementById('btn-restart').addEventListener('click',function(){document.getElementById('overlay-pause').classList.remove('visible');startGame()});
   document.getElementById('btn-quit').addEventListener('click',function(){document.getElementById('overlay-pause').classList.remove('visible');_timedStop();gameState.running=false;gameState.paused=false;showScreen('screen-start')});
   document.getElementById('btn-go-retry').addEventListener('click',function(){document.getElementById('overlay-gameover').classList.remove('visible');startGame()});
@@ -2355,7 +2365,7 @@ function runTests(){
   // Phase 5: renderDebugHitboxes exists
   (function(){assert('Phase5: renderDebugHitboxes',typeof renderDebugHitboxes==='function')})();
   // Phase 5: version
-  (function(){assert('Phase5: VERSION 1.7.1',CFG.VERSION==='1.7.1','got:'+CFG.VERSION)})();
+  (function(){assert('Phase5: VERSION 1.8.0',CFG.VERSION==='1.8.0','got:'+CFG.VERSION)})();
 
   // Phase 4: i18n new keys
   (function(){var sl=settings.language;settings.language='en';assert('Phase4: confirm EN',t('confirm')==='OK');assert('Phase4: enter_name EN',t('enter_name')==='ENTER YOUR NAME');settings.language='ru';assert('Phase4: confirm RU',t('confirm')==='\u041e\u041a');settings.language=sl})();

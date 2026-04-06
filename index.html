@@ -99,6 +99,9 @@ body.debug-mode #debug-panel{display:flex}
 .ls-num{font-size:18px;font-weight:900;color:var(--accent2)}
 .ls-btn.locked .ls-num{color:var(--text2)}
 .ls-name{font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;text-align:center;line-height:1.3}
+#pause-settings{background:rgba(0,0,0,.35);border:1px solid var(--border);border-radius:12px;padding:14px 20px;display:flex;flex-direction:column;gap:10px;min-width:280px;max-width:360px;width:90vw;margin-bottom:4px}
+.pause-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.pause-label{font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;min-width:80px}
 @media (pointer:coarse){
   .btn{padding:18px 32px;font-size:17px;min-width:240px}
   .toggle-btn{padding:12px 22px;min-width:88px;font-size:14px}
@@ -138,7 +141,7 @@ body.debug-mode #debug-panel{display:flex}
     <button class="btn" id="btn-settings" data-i18n="settings">SETTINGS</button>
     <button class="btn" id="btn-debug-main" style="font-size:12px;min-width:140px;opacity:.5">DEBUG: OFF</button>
   </div>
-  <div class="logo-sub" style="position:absolute;bottom:16px;font-size:11px;opacity:.4">v1.7.0</div>
+  <div class="logo-sub" style="position:absolute;bottom:16px;font-size:11px;opacity:.4">v1.8.0</div>
 </div>
 <div id="screen-settings" class="screen">
   <div class="settings-panel">
@@ -223,6 +226,28 @@ body.debug-mode #debug-panel{display:flex}
   </div>
   <div id="overlay-pause" class="overlay">
     <div class="overlay-title" data-i18n="paused">PAUSED</div>
+    <div id="pause-settings">
+      <div class="pause-row">
+        <span class="pause-label" data-i18n="music">MUSIC</span>
+        <button class="toggle-btn active" id="p-btn-music">ON</button>
+      </div>
+      <div class="pause-row">
+        <span class="pause-label" data-i18n="sound">SOUND</span>
+        <button class="toggle-btn active" id="p-btn-sfx">ON</button>
+      </div>
+      <div class="pause-row">
+        <span class="pause-label" data-i18n="visual">VISUAL FX</span>
+        <button class="toggle-btn active" id="p-btn-visual">ON</button>
+      </div>
+      <div class="pause-row">
+        <span class="pause-label" data-i18n="difficulty">DIFFICULTY</span>
+        <div style="display:flex;gap:6px">
+          <button class="lang-btn" id="p-diff-easy" data-i18n="easy">EASY</button>
+          <button class="lang-btn active" id="p-diff-normal" data-i18n="normal">NORMAL</button>
+          <button class="lang-btn" id="p-diff-hard" data-i18n="hard">HARD</button>
+        </div>
+      </div>
+    </div>
     <div class="overlay-btns"><button class="btn btn-primary" id="btn-resume" data-i18n="resume">RESUME</button><button class="btn" id="btn-restart" data-i18n="restart">RESTART</button><button class="btn" id="btn-quit" data-i18n="quit">QUIT</button></div>
   </div>
   <div id="overlay-gameover" class="overlay">
