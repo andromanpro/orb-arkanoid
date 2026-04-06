@@ -224,6 +224,7 @@ function recalcLayout(){
   var cellSize=Math.max(14,Math.min(bwRaw,Math.max(14,bhMax)));
   var gw=cellSize*cols+pad*(cols+1);
   layout.blockW=cellSize;layout.blockH=cellSize;layout.gridX=Math.max(0,Math.floor((CW-gw)/2));layout.gridY=CFG.BLOCK_TOP_OFFSET;layout.gridW=gw;layout.cols=cols;layout.paddleY=paddleY;
+  var puBar=document.getElementById('powerup-bar');if(puBar)puBar.style.bottom=(CH-paddleY+28)+'px';
 }
 
 function parseLevel(levelDef){
@@ -2041,7 +2042,7 @@ function renderTimerHUD(){
 var lastDt=0.016,_fpsLastTime=0,_fpsCount=0,_fpsCurrent=0;
 function updateDebugOverlay(now){
   _fpsCount++;if(now-_fpsLastTime>=500){_fpsCurrent=Math.round(_fpsCount*1000/(now-_fpsLastTime));_fpsCount=0;_fpsLastTime=now}
-  var el=document.getElementById('debug-overlay');if(!el||!gameState.debugMode)return;
+  var el=document.getElementById('debug-overlay');if(!el||(!gameState.debugMode&&!gameState.showHitboxes))return;
   var alive=particlePool.filter(function(p){return p._alive}).length;
   var blk=gameState.blocks.filter(function(b){return b.alive}).length;
   el.textContent=(glReady?'WebGL2':'Canvas2D')+' | FPS:'+_fpsCurrent+' | P:'+alive+'/'+CFG.MAX_PARTICLES+' | Blk:'+blk+' | Balls:'+gameState.balls.length+' | Score:'+gameState.score+' | Lvl:'+(gameState.level+1)+' | Combo:'+gameState.combo+' | BOT:'+(gameState.botEnabled?'ON':'OFF');
@@ -2276,7 +2277,7 @@ function initButtons(){
   var dbgBot=document.getElementById('dbg-bot'),dbgPrev=document.getElementById('dbg-prev'),dbgNext=document.getElementById('dbg-next');
   if(dbgBot)dbgBot.addEventListener('click',function(){gameState.botEnabled=!gameState.botEnabled;dbgBot.textContent='BOT: '+(gameState.botEnabled?'ON':'OFF')});
   var dbgHitbox=document.getElementById('dbg-hitbox');
-  if(dbgHitbox)dbgHitbox.addEventListener('click',function(){gameState.showHitboxes=!gameState.showHitboxes;dbgHitbox.textContent='HITBOX: '+(gameState.showHitboxes?'ON':'OFF')});
+  if(dbgHitbox){dbgHitbox.textContent='INFO: OFF';dbgHitbox.addEventListener('click',function(){gameState.showHitboxes=!gameState.showHitboxes;dbgHitbox.textContent='INFO: '+(gameState.showHitboxes?'ON':'OFF');var dov=document.getElementById('debug-overlay');if(dov)dov.style.display=gameState.showHitboxes?'block':'none';});}
   if(dbgPrev)dbgPrev.addEventListener('click',function(){if(gameState.level>0){startLevel(gameState.level-1);ensureLoop()}});
   if(dbgNext)dbgNext.addEventListener('click',function(){var _mxL=gameState.gameMode==='endless'?999:LEVELS.length-1;if(gameState.level<_mxL){startLevel(gameState.level+1);ensureLoop()}});
 }
