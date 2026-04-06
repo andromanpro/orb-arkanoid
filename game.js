@@ -212,10 +212,38 @@ function renderOrbInfo(){
     var desc=(ORB_DESC[k]&&(ORB_DESC[k][lang]||ORB_DESC[k].en))||def.name;
     var hpStr=def.hp+' hp';
     var row=document.createElement('div');row.style.cssText='display:flex;align-items:center;gap:12px';
-    row.innerHTML='<div style="min-width:36px;height:36px;border-radius:50%;background:'+def.color+'33;border:2px solid '+def.color+';display:flex;align-items:center;justify-content:center;font:bold 11px sans-serif;color:'+def.color+'">'+k+'</div>'
-      +'<div style="flex:1"><div style="font-weight:700;color:'+def.color+';font-size:13px;text-transform:uppercase">'+def.name+'</div>'
-      +'<div style="font-size:12px;color:var(--text2)">'+desc+'</div></div>'
-      +'<div style="font-size:11px;color:var(--text2);text-align:right;white-space:nowrap;opacity:.7">'+hpStr+'<br>'+def.pts+' pts</div>';
+    // Mini-orb canvas preview
+    var oc=document.createElement('canvas');oc.width=44;oc.height=44;oc.style.cssText='min-width:44px;border-radius:50%';
+    (function(canvas,blockDef){
+      var rc=canvas.getContext('2d'),sz=22;
+      // Deep layer
+      var g=rc.createRadialGradient(sz*.62,sz*.42,0,sz,sz,sz);
+      g.addColorStop(0,blockDef.color+'ee');g.addColorStop(0.55,blockDef.color+'88');g.addColorStop(1,'#00000099');
+      rc.fillStyle=g;rc.beginPath();rc.arc(sz,sz,sz-1,0,Math.PI*2);rc.fill();
+      // Liquid surface wave hint
+      rc.save();rc.beginPath();rc.ellipse(sz,sz*1.08,sz-2,sz*0.52,0,Math.PI,0);rc.closePath();
+      var lg=rc.createLinearGradient(0,sz,0,sz*2);lg.addColorStop(0,blockDef.color+'cc');lg.addColorStop(1,blockDef.color+'22');
+      rc.fillStyle=lg;rc.fill();rc.restore();
+      // Fresnel rim glow
+      var rim=rc.createRadialGradient(sz,sz,sz*0.65,sz,sz,sz-0.5);
+      rim.addColorStop(0,'rgba(0,0,0,0)');rim.addColorStop(1,blockDef.color+'77');
+      rc.fillStyle=rim;rc.beginPath();rc.arc(sz,sz,sz-1,0,Math.PI*2);rc.fill();
+      // Specular highlight
+      var sp=rc.createRadialGradient(sz*.56,sz*.38,0,sz*.6,sz*.42,sz*.42);
+      sp.addColorStop(0,'rgba(255,255,255,0.55)');sp.addColorStop(1,'rgba(255,255,255,0)');
+      rc.fillStyle=sp;rc.beginPath();rc.arc(sz,sz,sz-1,0,Math.PI*2);rc.fill();
+      // Thin outer ring
+      rc.strokeStyle=blockDef.color;rc.lineWidth=1.2;rc.globalAlpha=0.55;
+      rc.beginPath();rc.arc(sz,sz,sz-1.5,0,Math.PI*2);rc.stroke();rc.globalAlpha=1;
+    })(oc,def);
+    row.appendChild(oc);
+    var info=document.createElement('div');info.style.cssText='flex:1';
+    info.innerHTML='<div style="font-weight:700;color:'+def.color+';font-size:13px;text-transform:uppercase">'+def.name+'</div>'
+      +'<div style="font-size:12px;color:var(--text2)">'+desc+'</div>';
+    row.appendChild(info);
+    var stats=document.createElement('div');stats.style.cssText='font-size:11px;color:var(--text2);text-align:right;white-space:nowrap;opacity:.7';
+    stats.innerHTML=hpStr+'<br>'+def.pts+' pts';
+    row.appendChild(stats);
     list.appendChild(row);
   });
 }
@@ -1191,6 +1219,7 @@ function scheduleMusicStep(beat,time){
 // ============================================================
 var gl=null,glCanvas=null,glReady=false,glProg=null,glBgProg=null,glQuadVAO=null,glBgVAO=null;
 var glU={},glBgU={};
+var glAtomProg=null,glAtomU={};
 
 var VS_BLOCK='#version 300 es\nlayout(location=0)in vec2 a_C;layout(location=1)in vec2 a_T;uniform mat4 u_P;uniform vec2 u_Pos;uniform vec2 u_Sz;out vec2 vUV;void main(){gl_Position=u_P*vec4(u_Pos+a_C*u_Sz,0,1);vUV=a_T;}';
 
@@ -1311,6 +1340,47 @@ var LIQUID_TYPES={
   'B':{fill:0.92,amp:8.0,spd:5.0,spring:0.04,surface:[0.9,0.0,0.15],deep:[0.4,0.0,0.05],glow:[1.0,0.2,0.4]}
 };
 
+// ── Atom (Boss orb 3D rings) shaders ────────────────────────────────────────
+var VS_ATOM='#version 300 es\nlayout(location=0)in vec2 a_C;layout(location=1)in vec2 a_T;uniform mat4 u_P;uniform vec2 u_Pos;uniform vec2 u_Sz;out vec2 vPx;void main(){gl_Position=u_P*vec4(u_Pos+a_C*u_Sz,0,1);vPx=(a_T-.5)*u_Sz;}';
+
+var FS_ATOM='#version 300 es\nprecision highp float;\n'
++'in vec2 vPx;uniform float u_OrbR,u_RingR,u_Time;out vec4 fc;\n'
++'const float PI=3.14159265;\n'
+// ring(px, ax, spin, ra, R, col, rgb, a)
++'void ring(vec2 px,float ax,float spin,float ra,float R,vec3 col,inout vec3 rgb,inout float a){'
++'  float cs=cos(spin),ss=sin(spin);'
++'  float u=px.x*cos(ax)+px.y*sin(ax),v=-px.x*sin(ax)+px.y*cos(ax);'
++'  float t=atan(abs(cs)>.01?v/cs:sign(v)*9999.,u);'  // closest angle on projected ellipse
++'  vec2 cp=vec2(ra*cos(t),ra*cs*sin(t));float dist=length(vec2(u,v)-cp);'
++'  float rz=ra*sin(t)*ss;'                             // 3D depth of ring point
++'  float occ=ra>R?-sqrt(ra*ra-R*R):0.;'               // occlusion depth threshold
++'  if(rz<occ)return;'                                  // hidden behind sphere — discard
++'  float w=1.-smoothstep(0.,2.,dist);if(w<.01)return;'
++'  float br=.4+.6*clamp((rz-occ)/(ra-occ),0.,1.);'   // depth-based brightness
++'  w*=.8*br;rgb+=col*w;a=max(a,w);}\n'
+// elec(px, ax, spin, ra, R, col, spd, rgb, a)
++'void elec(vec2 px,float ax,float spin,float ra,float R,vec3 col,float spd,inout vec3 rgb,inout float a){'
++'  float cs=cos(spin),ss=sin(spin);float et=u_Time*spd*2.8;'
++'  float lx=ra*cos(et),ly=ra*sin(et)*cs,rz=ra*sin(et)*ss;'
++'  float ex=lx*cos(ax)-ly*sin(ax),ey=lx*sin(ax)+ly*cos(ax);'
++'  float occ=ra>R?-sqrt(ra*ra-R*R):0.;if(rz<occ)return;' // hidden — discard
++'  float df=clamp((rz-occ)/(ra-occ),0.,1.);float gr=7.+3.*df;'
++'  float d=length(px-vec2(ex,ey));'
++'  float gw=exp(-d*d/(gr*gr*.5))*.8*(.5+.5*df);'
++'  float dt=1.-smoothstep(0.,2.5+.5*df,d);'
++'  float w=gw+dt*.9;rgb+=col*w;a=max(a,min(1.,w));}\n'
++'void main(){'
++'  vec3 rgb=vec3(0.);float a=0.;float ra=u_RingR,R=u_OrbR;\n'
++'  ring(vPx,0.,       u_Time*.8*PI,   ra,R,vec3(1.,.43,.63),rgb,a);'
++'  elec(vPx,0.,       u_Time*.8*PI,   ra,R,vec3(1.,.43,.63),.8,  rgb,a);\n'
++'  ring(vPx,PI/3.,    u_Time*-.65*PI, ra,R,vec3(1.,.82,.30),rgb,a);'
++'  elec(vPx,PI/3.,    u_Time*-.65*PI, ra,R,vec3(1.,.82,.30),-.65,rgb,a);\n'
++'  ring(vPx,PI*.667,  u_Time*1.05*PI, ra,R,vec3(.51,.71,1.),rgb,a);'
++'  elec(vPx,PI*.667,  u_Time*1.05*PI, ra,R,vec3(.51,.71,1.),1.05,rgb,a);\n'
++'  float np=.7+.3*sin(u_Time*4.2);float nr=R*np+8.;float nd=length(vPx);'
++'  float ng=exp(-nd*nd/(nr*nr*.4))*.5;rgb+=vec3(1.,.31,.55)*ng;a=max(a,ng);'
++'  if(a<.01)discard;fc=vec4(rgb,a);}';
+
 function glHex3(hex){return[parseInt(hex.substr(1,2),16)/255,parseInt(hex.substr(3,2),16)/255,parseInt(hex.substr(5,2),16)/255]}
 
 function glCompile(src,type){var s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)){console.error('Shader:',gl.getShaderInfoLog(s));gl.deleteShader(s);return null}return s}
@@ -1350,6 +1420,9 @@ function initGL(){
   // cache bg uniforms
   glBgU.time=gl.getUniformLocation(glBgProg,'u_Time');glBgU.res=gl.getUniformLocation(glBgProg,'u_Res');
   glBgU.theme=gl.getUniformLocation(glBgProg,'u_Theme');
+  // Atom (Boss 3D rings) program
+  glAtomProg=glMakeProg(VS_ATOM,FS_ATOM);
+  if(glAtomProg){glAtomU.proj=gl.getUniformLocation(glAtomProg,'u_P');glAtomU.pos=gl.getUniformLocation(glAtomProg,'u_Pos');glAtomU.sz=gl.getUniformLocation(glAtomProg,'u_Sz');glAtomU.orbR=gl.getUniformLocation(glAtomProg,'u_OrbR');glAtomU.ringR=gl.getUniformLocation(glAtomProg,'u_RingR');glAtomU.time=gl.getUniformLocation(glAtomProg,'u_Time');}
   glReady=true;
 }
 
@@ -1408,6 +1481,24 @@ function glRenderBlocks(blocks,time){
     gl.uniform3f(glU.cd,dtc.deep[0],dtc.deep[1],dtc.deep[2]);
     gl.uniform1f(glU.hit,0.0);gl.uniform1f(glU.alpha,dFrac);
     if(db.wH)gl.uniform1fv(glU.wh,db.wH);
+    gl.drawElements(gl.TRIANGLES,6,gl.UNSIGNED_SHORT,0);
+  }
+  gl.bindVertexArray(null);
+}
+
+function glRenderAtoms(blocks,time){
+  if(!gl||!glAtomProg)return;
+  var proj=glOrtho(CW,CH);
+  gl.useProgram(glAtomProg);gl.bindVertexArray(glQuadVAO.vao);
+  gl.uniformMatrix4fv(glAtomU.proj,false,proj);
+  for(var i=0;i<blocks.length;i++){
+    var b=blocks[i];if(!b.alive||b.type!=='B')continue;
+    var ra=b.orbR+13;var sz=(ra+18)*2;
+    gl.uniform2f(glAtomU.pos,b.cx-sz/2,b.cy-sz/2);
+    gl.uniform2f(glAtomU.sz,sz,sz);
+    gl.uniform1f(glAtomU.orbR,b.orbR);
+    gl.uniform1f(glAtomU.ringR,ra);
+    gl.uniform1f(glAtomU.time,time);
     gl.drawElements(gl.TRIANGLES,6,gl.UNSIGNED_SHORT,0);
   }
   gl.bindVertexArray(null);
@@ -1659,49 +1750,6 @@ function renderExplosiveWarnings(){
       ctx.fillStyle='rgba(255,200,0,0.75)';
       for(var t=0;t<4;t++){var ta=t*Math.PI/2+now*1.1;var tx=Math.cos(ta)*(r+10);var ty=Math.sin(ta)*(r+10);var ts=3.5;
         ctx.beginPath();ctx.moveTo(tx,ty-ts);ctx.lineTo(tx+ts,ty+ts);ctx.lineTo(tx-ts,ty+ts);ctx.closePath();ctx.fill();}
-      ctx.restore();
-    } else if(b.type==='B'){
-      // BOSS: Bohr atom — 3 rings truly spinning in 3D via perspective projection
-      ctx.save();ctx.translate(cx,cy);
-      var ra=r+13;
-      // Nucleus pulsing halo
-      var npulse=0.7+0.3*Math.sin(now*4.2);
-      var ng=ctx.createRadialGradient(0,0,0,0,0,r*npulse+7);
-      ng.addColorStop(0,'rgba(255,80,140,0.45)');ng.addColorStop(1,'rgba(255,0,60,0)');
-      ctx.fillStyle=ng;ctx.beginPath();ctx.arc(0,0,r*npulse+7,0,Math.PI*2);ctx.fill();
-      // 3 rings: each spins around its local X axis
-      // Projection: screen.x=ra*cos(θ), screen.y=ra*sin(θ)*cos(spin), depth=ra*sin(θ)*sin(spin)
-      var oAx=[0,Math.PI/3,2*Math.PI/3]; // ring orientation in screen plane
-      var oSpd=[0.8,-0.65,1.05];          // spin speeds (rad/s)
-      var eFull=['rgba(255,110,160,0.95)','rgba(255,210,80,0.95)','rgba(130,180,255,0.95)'];
-      var eHex=['#ff6ea0','#ffd44a','#82b4ff'];
-      for(var o=0;o<3;o++){
-        var ax=oAx[o],spinA=now*oSpd[o]*Math.PI;
-        var cS=Math.cos(spinA),sS=Math.sin(spinA);
-        // Draw ring: back half dim dashed, front half bright solid
-        // Front = where sin(θ)*sS >= 0: if sS>=0 → θ∈[0,π], else θ∈[π,2π]
-        var fwd=sS>=0;
-        ctx.save();ctx.rotate(ax);ctx.scale(1,cS||0.001);
-        ctx.setLineDash([2,4]);ctx.strokeStyle='rgba(255,60,110,0.18)';ctx.lineWidth=1.0;
-        ctx.beginPath();ctx.arc(0,0,ra,fwd?Math.PI:0,fwd?Math.PI*2:Math.PI);ctx.stroke();
-        ctx.setLineDash([]);ctx.strokeStyle='rgba(255,60,110,0.6)';ctx.lineWidth=1.9;
-        ctx.beginPath();ctx.arc(0,0,ra,fwd?0:Math.PI,fwd?Math.PI:Math.PI*2);ctx.stroke();
-        ctx.restore();
-        // Electron: depth = ra*sin(eθ)*sS → positive = in front of orb
-        var eTheta=now*oSpd[o]*2.8;
-        var lx=ra*Math.cos(eTheta),ly=ra*Math.sin(eTheta)*cS;
-        var eDepth=ra*Math.sin(eTheta)*sS;
-        var ex=lx*Math.cos(ax)-ly*Math.sin(ax),ey=lx*Math.sin(ax)+ly*Math.cos(ax);
-        if(eDepth>=0){
-          var eg=ctx.createRadialGradient(ex,ey,0,ex,ey,7);
-          eg.addColorStop(0,eFull[o]);eg.addColorStop(1,'rgba(255,60,100,0)');
-          ctx.fillStyle=eg;ctx.beginPath();ctx.arc(ex,ey,7,0,Math.PI*2);ctx.fill();
-          ctx.fillStyle=eHex[o];ctx.globalAlpha=0.95;ctx.beginPath();ctx.arc(ex,ey,2.5,0,Math.PI*2);ctx.fill();
-        }else{
-          ctx.fillStyle=eHex[o];ctx.globalAlpha=0.28;ctx.beginPath();ctx.arc(ex,ey,1.5,0,Math.PI*2);ctx.fill();
-        }
-        ctx.globalAlpha=1.0;
-      }
       ctx.restore();
     }
   }
@@ -2254,7 +2302,7 @@ function render(){
   if(glReady){
     gl.viewport(0,0,CW,CH);gl.clearColor(0,0,0,1);gl.clear(gl.COLOR_BUFFER_BIT);
     gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
-    glRenderBg(gameState.level,glTime);glRenderBlocks(gameState.blocks,glTime);
+    glRenderBg(gameState.level,glTime);glRenderBlocks(gameState.blocks,glTime);glRenderAtoms(gameState.blocks,glTime);
     ctx.clearRect(0,0,CW,CH);
     renderOrbCracks();renderBossRings();
   }else{renderBackground();renderBlocks()}
