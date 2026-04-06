@@ -1166,7 +1166,7 @@ var glU={},glBgU={};
 var VS_BLOCK='#version 300 es\nlayout(location=0)in vec2 a_C;layout(location=1)in vec2 a_T;uniform mat4 u_P;uniform vec2 u_Pos;uniform vec2 u_Sz;out vec2 vUV;void main(){gl_Position=u_P*vec4(u_Pos+a_C*u_Sz,0,1);vUV=a_T;}';
 
 var FS_BLOCK='#version 300 es\nprecision mediump float;\n'
-+'in vec2 vUV;uniform float u_Fill,u_Time,u_Amp,u_Spd,u_OrbR,u_Hit;uniform int u_Cols;uniform float u_WH[6];uniform vec3 u_CS,u_CD,u_CG;out vec4 fc;\n'
++'in vec2 vUV;uniform float u_Fill,u_Time,u_Amp,u_Spd,u_OrbR,u_Hit,u_Alpha;uniform int u_Cols;uniform float u_WH[6];uniform vec3 u_CS,u_CD,u_CG;out vec4 fc;\n'
 +'float cmr(float idx){int i=int(floor(idx));float t=fract(idx);float p0=u_WH[clamp(i-1,0,u_Cols-1)];float p1=u_WH[clamp(i,0,u_Cols-1)];float p2=u_WH[clamp(i+1,0,u_Cols-1)];float p3=u_WH[clamp(i+2,0,u_Cols-1)];float t2=t*t,t3=t2*t;return 0.5*((2.*p1)+(-p0+p2)*t+(2.*p0-5.*p1+4.*p2-p3)*t2+(-p0+3.*p1-3.*p2+p3)*t3);}\n'
 +'float wSurf(float lx,float am,float fr,float sp){'
 +'  float oS=u_OrbR*2.;float bY=-u_OrbR+oS*(1.-u_Fill);float cf=(lx/oS+.5)*float(u_Cols-1);float wO=cmr(cf);'
@@ -1203,7 +1203,7 @@ var FS_BLOCK='#version 300 es\nprecision mediump float;\n'
 +'  vec2 hl2=uv-vec2(.14,.17);col=min(vec3(1.),col+u_CS*.55*exp(-dot(hl2,hl2)*55.)*.18);\n'
 // Bottom shadow
 +'  col*=.68+.32*clamp(1.-(uv.y+.5),0.,1.);\n'
-+'  float edge=1.-smoothstep(.86,1.,dist);fc=vec4(col,edge);}';
++'  float edge=1.-smoothstep(.86,1.,dist);fc=vec4(col,edge*u_Alpha);}';
 
 var VS_BG='#version 300 es\nlayout(location=0)in vec2 a_C;out vec2 vUV;void main(){gl_Position=vec4(a_C*2.0-1.0,0,1);vUV=a_C;}';
 
@@ -1317,7 +1317,7 @@ function initGL(){
   glU.spd=gl.getUniformLocation(glProg,'u_Spd');glU.cols=gl.getUniformLocation(glProg,'u_Cols');
   glU.wh=gl.getUniformLocation(glProg,'u_WH');glU.cs=gl.getUniformLocation(glProg,'u_CS');
   glU.cd=gl.getUniformLocation(glProg,'u_CD');glU.cg=gl.getUniformLocation(glProg,'u_CG');
-  glU.orbR=gl.getUniformLocation(glProg,'u_OrbR');glU.hit=gl.getUniformLocation(glProg,'u_Hit');
+  glU.orbR=gl.getUniformLocation(glProg,'u_OrbR');glU.hit=gl.getUniformLocation(glProg,'u_Hit');glU.alpha=gl.getUniformLocation(glProg,'u_Alpha');
   // cache bg uniforms
   glBgU.time=gl.getUniformLocation(glBgProg,'u_Time');glBgU.res=gl.getUniformLocation(glBgProg,'u_Res');
   glBgU.theme=gl.getUniformLocation(glBgProg,'u_Theme');
@@ -1358,7 +1358,7 @@ function glRenderBlocks(blocks,time){
     if(b.type==='R'){var hue=(time*0.5)%1;var r=Math.abs(hue*6-3)-1;var g=2-Math.abs(hue*6-2);var bl=2-Math.abs(hue*6-4);r=Math.max(0,Math.min(1,r));g=Math.max(0,Math.min(1,g));bl=Math.max(0,Math.min(1,bl));gl.uniform3f(glU.cs,r*.8*_depthF,g*.8*_depthF,bl*.8*_depthF);gl.uniform3f(glU.cg,r*_depthF,g*_depthF,bl*_depthF)}
     else{gl.uniform3f(glU.cs,tc.surface[0]*_depthF,tc.surface[1]*_depthF,tc.surface[2]*_depthF);gl.uniform3f(glU.cg,tc.glow[0]*_depthF,tc.glow[1]*_depthF,tc.glow[2]*_depthF)}
     gl.uniform3f(glU.cd,tc.deep[0]*_depthF,tc.deep[1]*_depthF,tc.deep[2]*_depthF);
-    var hitF=b.hitAnim>0?Math.max(0,b.hitAnim):0;gl.uniform1f(glU.hit,hitF);
+    var hitF=b.hitAnim>0?Math.max(0,b.hitAnim):0;gl.uniform1f(glU.hit,hitF);gl.uniform1f(glU.alpha,1.0);
     if(b.wH)gl.uniform1fv(glU.wh,b.wH);
     gl.drawElements(gl.TRIANGLES,6,gl.UNSIGNED_SHORT,0);
   }
@@ -1377,7 +1377,7 @@ function glRenderBlocks(blocks,time){
     if(db.type==='R'){var dHue=(time*0.5)%1;var dR=Math.max(0,Math.min(1,Math.abs(dHue*6-3)-1));var dG=Math.max(0,Math.min(1,2-Math.abs(dHue*6-2)));var dBl=Math.max(0,Math.min(1,2-Math.abs(dHue*6-4)));gl.uniform3f(glU.cs,dR*.8,dG*.8,dBl*.8);gl.uniform3f(glU.cg,dR,dG,dBl);}
     else{gl.uniform3f(glU.cs,dtc.surface[0],dtc.surface[1],dtc.surface[2]);gl.uniform3f(glU.cg,dtc.glow[0],dtc.glow[1],dtc.glow[2]);}
     gl.uniform3f(glU.cd,dtc.deep[0],dtc.deep[1],dtc.deep[2]);
-    gl.uniform1f(glU.hit,0.0);
+    gl.uniform1f(glU.hit,0.0);gl.uniform1f(glU.alpha,dFrac);
     if(db.wH)gl.uniform1fv(glU.wh,db.wH);
     gl.drawElements(gl.TRIANGLES,6,gl.UNSIGNED_SHORT,0);
   }
