@@ -13,6 +13,7 @@ All notable changes to ORB ARKANOID are documented here.
 
 ### Fixed
 - **Бот на фоне** — `updateDebugBot()` продолжал работать после выхода в главное меню. Добавлена проверка `currentScreen === 'screen-game'`
+- **Верстка паузы** — кнопки сложности (Easy/Normal/Hard) вылезали за границы панели. Строка difficulty теперь переносится: метка сверху, кнопки растянуты на всю ширину снизу
 
 ---
 
