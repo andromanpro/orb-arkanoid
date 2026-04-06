@@ -41,7 +41,7 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 .lb-table td{padding:8px 0;border-top:1px solid rgba(255,100,20,.1);font-size:14px;color:var(--text)}
 #gl-canvas{display:block;position:absolute;inset:0;width:100%;height:100%;z-index:4}
 #game-canvas{display:block;position:absolute;inset:0;width:100%;height:100%;z-index:5;background:transparent}
-#hud{position:fixed;top:0;left:0;right:0;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:linear-gradient(180deg,rgba(10,8,6,.95) 0%,rgba(10,8,6,0) 100%);z-index:20;pointer-events:none}
+#hud{position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:min(100vw,960px);height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:linear-gradient(180deg,rgba(10,8,6,.95) 0%,rgba(10,8,6,0) 100%);z-index:20;pointer-events:none}
 .hud-group{display:flex;align-items:center;gap:10px}
 .hud-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.1em}
 .hud-value{font-size:20px;font-weight:700;color:var(--text)}
@@ -74,15 +74,23 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-fam
 #powerup-bar{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:10px;z-index:21;pointer-events:none}
 .powerup-icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;border:1.5px solid rgba(255,255,255,.3);position:relative;overflow:hidden}
 .powerup-timer{position:absolute;bottom:0;left:0;right:0;height:3px;background:rgba(255,255,255,.6);transform-origin:left}
+#timed-bar{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);height:5px;width:min(90vw,860px);border-radius:3px;display:none;z-index:22}
+#timer-text{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);font:bold 13px 'Orbitron',sans-serif;white-space:nowrap;display:none;pointer-events:none;z-index:22;letter-spacing:.06em}
 #debug-overlay{position:fixed;top:56px;left:8px;font-size:11px;color:rgba(255,255,100,.7);font-family:monospace;pointer-events:none;z-index:99;display:none;line-height:1.4}
 body.debug-mode #debug-overlay{display:block}
 #debug-panel{position:fixed;bottom:60px;right:12px;display:none;flex-direction:column;gap:6px;z-index:22;pointer-events:all}
 body.debug-mode #debug-panel{display:flex}
 #screen-levelselect{z-index:10;gap:20px}
 #level-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;max-width:640px;width:92vw}
-#fever-display{position:fixed;top:38%;left:50%;transform:translateX(-50%);font-size:clamp(30px,6vw,56px);font-weight:900;letter-spacing:.18em;text-transform:uppercase;color:#fff;text-shadow:0 0 24px #ffaa00,0 0 48px #ff6600,0 0 80px #ff2200;pointer-events:none;z-index:30;display:none;animation:feverPulse .3s infinite alternate}
+#fever-display{position:fixed;top:38%;left:50%;transform:translateX(-50%);font-size:clamp(34px,7vw,68px);font-weight:900;letter-spacing:.22em;text-transform:uppercase;pointer-events:none;z-index:30;display:none;
+  color:#ffdd00;
+  text-shadow:0 0 12px #ff8800,0 0 30px #ff4400;
+  will-change:transform;
+  animation:feverPulse .35s infinite alternate}
 #fever-display.visible{display:block}
-@keyframes feverPulse{from{text-shadow:0 0 18px #ffaa00,0 0 36px #ff6600;transform:translateX(-50%) scale(1)}to{text-shadow:0 0 32px #fff,0 0 60px #ffcc00,0 0 90px #ff4400;transform:translateX(-50%) scale(1.08)}}
+@keyframes feverPulse{
+  from{transform:translateX(-50%) scale(1);}
+  to{transform:translateX(-50%) scale(1.08);}}
 #speedup-display{position:fixed;top:28%;left:50%;transform:translateX(-50%);font-size:clamp(18px,4vw,32px);font-weight:900;letter-spacing:.12em;color:#ff8800;text-shadow:0 0 18px #ff6600,0 0 36px #ff3300;pointer-events:none;z-index:30;display:none;animation:ragePulse .25s infinite alternate}
 @keyframes ragePulse{from{transform:translateX(-50%) scale(1);opacity:1}to{transform:translateX(-50%) scale(1.1);opacity:0.8}}
 .ls-btn{padding:10px 6px;min-height:60px;background:rgba(20,14,8,0.75);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);cursor:pointer;transition:all .2s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-family:inherit}
@@ -91,6 +99,23 @@ body.debug-mode #debug-panel{display:flex}
 .ls-num{font-size:18px;font-weight:900;color:var(--accent2)}
 .ls-btn.locked .ls-num{color:var(--text2)}
 .ls-name{font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;text-align:center;line-height:1.3}
+@media (pointer:coarse){
+  .btn{padding:18px 32px;font-size:17px;min-width:240px}
+  .toggle-btn{padding:12px 22px;min-width:88px;font-size:14px}
+  .lang-btn{padding:11px 18px;font-size:14px}
+  .hud-btn{width:44px;height:44px;font-size:18px}
+  #hud-btns{top:8px;right:12px;gap:10px}
+  .settings-row{gap:10px;flex-wrap:wrap}
+  .settings-label{min-width:100px}
+  #level-grid{grid-template-columns:repeat(3,1fr);gap:12px}
+  .ls-btn{min-height:70px}
+  .ls-num{font-size:20px}
+  .ls-name{font-size:10px}
+  #powerup-bar{bottom:28px;gap:14px}
+  .powerup-icon{width:38px;height:38px;font-size:18px}
+  .overlay-btns{gap:14px}
+  .overlay-btns .btn{padding:18px 40px}
+}
 </style>
 </head>
 <body>
@@ -100,6 +125,11 @@ body.debug-mode #debug-panel{display:flex}
     <div class="logo-title" id="logo-title">ORB ARKANOID</div>
     <div class="logo-sub" data-i18n="tagline">Break the Orbs</div>
   </div>
+  <div style="display:flex;gap:8px;margin-bottom:4px">
+    <button class="lang-btn active" id="mode-classic" data-i18n="classic">CLASSIC</button>
+    <button class="lang-btn" id="mode-timed" data-i18n="timed">TIMED</button>
+    <button class="lang-btn" id="mode-endless" data-i18n="endless">ENDLESS</button>
+  </div>
   <div class="menu-buttons">
     <button class="btn btn-primary" id="btn-play" data-i18n="play">PLAY</button>
     <button class="btn" id="btn-levelselect" data-i18n="level_select">LEVEL SELECT</button>
@@ -108,7 +138,7 @@ body.debug-mode #debug-panel{display:flex}
     <button class="btn" id="btn-settings" data-i18n="settings">SETTINGS</button>
     <button class="btn" id="btn-debug-main" style="font-size:12px;min-width:140px;opacity:.5">DEBUG: OFF</button>
   </div>
-  <div class="logo-sub" style="position:absolute;bottom:16px;font-size:11px;opacity:.4">v1.6.0</div>
+  <div class="logo-sub" style="position:absolute;bottom:16px;font-size:11px;opacity:.4">v1.7.0</div>
 </div>
 <div id="screen-settings" class="screen">
   <div class="settings-panel">
@@ -177,6 +207,8 @@ body.debug-mode #debug-panel{display:flex}
   </div>
   <div id="combo-display"></div>
   <div id="powerup-bar"></div>
+  <div id="timed-bar"></div>
+  <div id="timer-text"></div>
   <div id="debug-overlay"></div>
   <div id="debug-panel">
     <button class="hud-btn" id="dbg-bot" style="width:auto;padding:0 10px;font-size:11px;white-space:nowrap">BOT: OFF</button>
