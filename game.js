@@ -204,55 +204,104 @@ var ORB_DESC={
   B:{en:'\u2620 8 hp Boss. Shoots at paddle. Chain explosion on death',ru:'\u2620 8 \u0445\u043f \u0411\u043e\u0441\u0441. \u0421\u0442\u0440\u0435\u043b\u044f\u0435\u0442 \u043f\u043e \u043f\u043b\u0430\u0442\u0444\u043e\u0440\u043c\u0435. \u0412\u0437\u0440\u044b\u0432 \u043f\u0440\u0438 \u0441\u043c\u0435\u0440\u0442\u0438'}
 };
 
-function captureOrbPreviews(){
-  // Render each orb type using the real WebGL shader → readPixels → canvas
-  if(!gl||!glReady||!glProg||!glQuadVAO)return {};
-  var sz=48,previews={};
-  var proj=glOrtho(sz,sz);
-  gl.viewport(0,0,sz,sz);
-  gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
-  gl.useProgram(glProg);gl.bindVertexArray(glQuadVAO.vao);
-  gl.uniformMatrix4fv(glU.proj,false,proj);
-  gl.uniform2f(glU.pos,0,0);gl.uniform2f(glU.size,sz,sz);
-  gl.uniform1f(glU.orbR,sz/2);
-  gl.uniform1i(glU.cols,6);gl.uniform1f(glU.hit,0.0);gl.uniform1f(glU.alpha,1.0);
-  gl.uniform1fv(glU.wh,new Float32Array(6));
-  var t=performance.now()/1000;
-  Object.keys(LIQUID_TYPES).forEach(function(k){
-    var tc=LIQUID_TYPES[k];
-    gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.uniform1f(glU.fill,tc.fill);gl.uniform1f(glU.amp,tc.amp);
-    gl.uniform1f(glU.spd,tc.spd);gl.uniform1f(glU.time,t);
-    gl.uniform3fv(glU.cs,new Float32Array(tc.surface));
-    gl.uniform3fv(glU.cd,new Float32Array(tc.deep));
-    gl.uniform3fv(glU.cg,new Float32Array(tc.glow));
-    gl.drawElements(gl.TRIANGLES,6,gl.UNSIGNED_SHORT,0);
-    // readPixels — works synchronously before browser composite
-    var px=new Uint8Array(sz*sz*4);
-    gl.readPixels(0,0,sz,sz,gl.RGBA,gl.UNSIGNED_BYTE,px);
-    // Flip Y: WebGL origin = bottom-left, canvas origin = top-left
-    var flip=new Uint8ClampedArray(sz*sz*4);
-    for(var y=0;y<sz;y++){var s=(sz-1-y)*sz*4,d=y*sz*4;flip.set(px.subarray(s,s+sz*4),d);}
-    var pc=document.createElement('canvas');pc.width=pc.height=sz;
-    pc.getContext('2d').putImageData(new ImageData(flip,sz,sz),0,0);
-    previews[k]=pc;
-  });
-  gl.viewport(0,0,CW,CH);gl.bindVertexArray(null);
-  return previews;
+// ── Info Orb Preview — animated secondary WebGL context ─────────────────────
+var _iop={gl:null,prog:null,atomProg:null,vao:null,u:{},au:{},raf:null,can:null,disp:{}};
+function _iopInit(){
+  if(_iop.gl)return true;
+  var c=document.createElement('canvas');c.width=c.height=52;
+  c.style.cssText='position:absolute;left:-9999px;top:-9999px;pointer-events:none';
+  document.body.appendChild(c);
+  var g=c.getContext('webgl2',{preserveDrawingBuffer:true,alpha:true,antialias:false,premultipliedAlpha:false});
+  if(!g)return false;
+  _iop.can=c;_iop.gl=g;
+  function mk(vs,fs){
+    var v=g.createShader(g.VERTEX_SHADER);g.shaderSource(v,vs);g.compileShader(v);
+    var f=g.createShader(g.FRAGMENT_SHADER);g.shaderSource(f,fs);g.compileShader(f);
+    var p=g.createProgram();g.attachShader(p,v);g.attachShader(p,f);g.linkProgram(p);
+    g.deleteShader(v);g.deleteShader(f);return p;
+  }
+  _iop.prog=mk(VS_BLOCK,FS_BLOCK);
+  _iop.atomProg=mk(VS_ATOM,FS_ATOM);
+  var p=_iop.prog;
+  _iop.u={proj:g.getUniformLocation(p,'u_P'),pos:g.getUniformLocation(p,'u_Pos'),sz:g.getUniformLocation(p,'u_Sz'),
+    orbR:g.getUniformLocation(p,'u_OrbR'),fill:g.getUniformLocation(p,'u_Fill'),amp:g.getUniformLocation(p,'u_Amp'),
+    spd:g.getUniformLocation(p,'u_Spd'),time:g.getUniformLocation(p,'u_Time'),cols:g.getUniformLocation(p,'u_Cols'),
+    cs:g.getUniformLocation(p,'u_CS'),cd:g.getUniformLocation(p,'u_CD'),cg:g.getUniformLocation(p,'u_CG'),
+    wh:g.getUniformLocation(p,'u_WH'),hit:g.getUniformLocation(p,'u_Hit'),alpha:g.getUniformLocation(p,'u_Alpha')};
+  var ap=_iop.atomProg;
+  _iop.au={proj:g.getUniformLocation(ap,'u_P'),pos:g.getUniformLocation(ap,'u_Pos'),sz:g.getUniformLocation(ap,'u_Sz'),
+    orbR:g.getUniformLocation(ap,'u_OrbR'),ringR:g.getUniformLocation(ap,'u_RingR'),time:g.getUniformLocation(ap,'u_Time')};
+  var verts=new Float32Array([0,0,0,0,1,0,1,0,1,1,1,1,0,1,0,1]);
+  var idx=new Uint16Array([0,1,2,0,2,3]);
+  var vao=g.createVertexArray();g.bindVertexArray(vao);
+  var vb=g.createBuffer();g.bindBuffer(g.ARRAY_BUFFER,vb);g.bufferData(g.ARRAY_BUFFER,verts,g.STATIC_DRAW);
+  g.enableVertexAttribArray(0);g.vertexAttribPointer(0,2,g.FLOAT,false,16,0);
+  g.enableVertexAttribArray(1);g.vertexAttribPointer(1,2,g.FLOAT,false,16,8);
+  var ib=g.createBuffer();g.bindBuffer(g.ELEMENT_ARRAY_BUFFER,ib);g.bufferData(g.ELEMENT_ARRAY_BUFFER,idx,g.STATIC_DRAW);
+  g.bindVertexArray(null);
+  _iop.vao=vao;
+  return true;
 }
+function _iopFrame(now){
+  _iop.raf=requestAnimationFrame(_iopFrame);
+  var g=_iop.gl;if(!g||!_iop.prog)return;
+  var t=now/1000,sz=52,orbR=sz/2-2;
+  var proj=glOrtho(sz,sz);
+  g.viewport(0,0,sz,sz);
+  g.enable(g.BLEND);g.blendFunc(g.SRC_ALPHA,g.ONE_MINUS_SRC_ALPHA);
+  var keys=Object.keys(LIQUID_TYPES);
+  for(var i=0;i<keys.length;i++){
+    var k=keys[i];
+    var dc=_iop.disp[k];if(!dc)continue;
+    var tc=LIQUID_TYPES[k];
+    // Liquid orb pass
+    g.clearColor(0,0,0,0);g.clear(g.COLOR_BUFFER_BIT);
+    g.useProgram(_iop.prog);g.bindVertexArray(_iop.vao);
+    g.uniformMatrix4fv(_iop.u.proj,false,proj);
+    g.uniform2f(_iop.u.pos,0,0);g.uniform2f(_iop.u.sz,sz,sz);
+    g.uniform1f(_iop.u.orbR,orbR);
+    g.uniform1f(_iop.u.fill,tc.fill);g.uniform1f(_iop.u.amp,tc.amp);
+    g.uniform1f(_iop.u.spd,tc.spd);g.uniform1f(_iop.u.time,t);
+    g.uniform3fv(_iop.u.cs,new Float32Array(tc.surface));
+    g.uniform3fv(_iop.u.cd,new Float32Array(tc.deep));
+    g.uniform3fv(_iop.u.cg,new Float32Array(tc.glow));
+    g.uniform1i(_iop.u.cols,6);g.uniform1f(_iop.u.hit,0);g.uniform1f(_iop.u.alpha,1);
+    g.uniform1fv(_iop.u.wh,new Float32Array(6));
+    g.drawElements(g.TRIANGLES,6,g.UNSIGNED_SHORT,0);
+    // Boss: atom rings pass on top (no clear — blends over the liquid)
+    if(k==='B'){
+      var ra=orbR+9,qsz=(ra+14)*2;
+      g.useProgram(_iop.atomProg);g.bindVertexArray(_iop.vao);
+      g.uniformMatrix4fv(_iop.au.proj,false,proj);
+      g.uniform2f(_iop.au.pos,sz/2-qsz/2,sz/2-qsz/2);
+      g.uniform2f(_iop.au.sz,qsz,qsz);
+      g.uniform1f(_iop.au.orbR,orbR);
+      g.uniform1f(_iop.au.ringR,ra);
+      g.uniform1f(_iop.au.time,t);
+      g.drawElements(g.TRIANGLES,6,g.UNSIGNED_SHORT,0);
+    }
+    g.bindVertexArray(null);
+    // Copy rendered frame to the display canvas (preserveDrawingBuffer handles Y correctly)
+    dc.clearRect(0,0,sz,sz);
+    dc.drawImage(_iop.can,0,0);
+  }
+}
+function startInfoOrbPreview(){if(!_iopInit())return;if(_iop.raf)return;_iop.raf=requestAnimationFrame(_iopFrame);}
+function stopInfoOrbPreview(){if(_iop.raf){cancelAnimationFrame(_iop.raf);_iop.raf=null;}}
 
 function renderOrbInfo(){
   var list=document.getElementById('info-orbs-list');if(!list)return;list.innerHTML='';
+  _iop.disp={};
   var lang=settings.language||'en';
-  var previews=captureOrbPreviews();
+  var sz=52;
   Object.keys(BLOCK_DEFS).forEach(function(k){
     var def=BLOCK_DEFS[k];
     var desc=(ORB_DESC[k]&&(ORB_DESC[k][lang]||ORB_DESC[k].en))||def.name;
     var hpStr=def.hp+' hp';
     var row=document.createElement('div');row.style.cssText='display:flex;align-items:center;gap:12px';
-    var oc=previews[k];
-    if(!oc){oc=document.createElement('canvas');oc.width=oc.height=48;}
-    oc.style.cssText='min-width:48px;height:48px;border-radius:50%';
+    var oc=document.createElement('canvas');oc.width=oc.height=sz;
+    oc.style.cssText='min-width:'+sz+'px;height:'+sz+'px;border-radius:50%';
+    if(LIQUID_TYPES[k]){_iop.disp[k]=oc.getContext('2d');}
     row.appendChild(oc);
     var info=document.createElement('div');info.style.cssText='flex:1';
     info.innerHTML='<div style="font-weight:700;color:'+def.color+';font-size:13px;text-transform:uppercase">'+def.name+'</div>'
@@ -1469,14 +1518,9 @@ function glRenderBlocks(blocks,time){
     var orbD=_visR*2;
     gl.uniform2f(glU.pos,b.cx-_visR,b.cy-_visR);gl.uniform2f(glU.size,orbD,orbD);
     gl.uniform1f(glU.orbR,_visR);
-    var hpF=b.hp/b.maxHp;gl.uniform1f(glU.fill,tc.fill*hpF);
+    gl.uniform1f(glU.fill,tc.fill);
     gl.uniform1f(glU.amp,tc.amp);gl.uniform1f(glU.spd,tc.spd);gl.uniform1f(glU.time,time);
-    // Depth: top rows darker (row 0 = top = 82% brightness, increases per row)
-    var _depthF=Math.min(1.0,0.82+b.row*0.036);
-    // Rainbow hue cycle
-    if(b.type==='R'){var hue=(time*0.5)%1;var r=Math.abs(hue*6-3)-1;var g=2-Math.abs(hue*6-2);var bl=2-Math.abs(hue*6-4);r=Math.max(0,Math.min(1,r));g=Math.max(0,Math.min(1,g));bl=Math.max(0,Math.min(1,bl));gl.uniform3f(glU.cs,r*.8*_depthF,g*.8*_depthF,bl*.8*_depthF);gl.uniform3f(glU.cg,r*_depthF,g*_depthF,bl*_depthF)}
-    else{gl.uniform3f(glU.cs,tc.surface[0]*_depthF,tc.surface[1]*_depthF,tc.surface[2]*_depthF);gl.uniform3f(glU.cg,tc.glow[0]*_depthF,tc.glow[1]*_depthF,tc.glow[2]*_depthF)}
-    gl.uniform3f(glU.cd,tc.deep[0]*_depthF,tc.deep[1]*_depthF,tc.deep[2]*_depthF);
+    gl.uniform3fv(glU.cs,tc.surface);gl.uniform3fv(glU.cg,tc.glow);gl.uniform3fv(glU.cd,tc.deep);
     var hitF=b.hitAnim>0?Math.max(0,b.hitAnim):0;gl.uniform1f(glU.hit,hitF);gl.uniform1f(glU.alpha,1.0);
     if(b.wH)gl.uniform1fv(glU.wh,b.wH);
     gl.drawElements(gl.TRIANGLES,6,gl.UNSIGNED_SHORT,0);
@@ -1553,7 +1597,7 @@ function updateBlockWaves(blocks,dt){
     }
     var tc=LIQUID_TYPES[b.type];if(!tc||tc.amp===0)continue;
     // Ambient excitation — keeps liquid alive between hits
-    if(Math.random()<0.1){var _ac=Math.floor(Math.random()*6);b.wV[_ac]+=(Math.random()-0.5)*b.h*0.05;}
+    if(Math.random()<0.35){var _ac=Math.floor(Math.random()*6);b.wV[_ac]+=(Math.random()-0.5)*b.h*0.05;}
     var cols=6,spring=tc.spring,damp=0.97,spread=0.25,maxA=b.h*0.4,sdt=dt/4;
     for(var step=0;step<4;step++){
       for(var c=0;c<cols;c++){b.wV[c]+=-spring*b.wH[c]*sdt;b.wV[c]*=Math.pow(damp,sdt);b.wH[c]+=b.wV[c]*sdt*0.25;if(b.wH[c]>maxA){b.wH[c]=maxA;b.wV[c]*=0.3}if(b.wH[c]<-maxA){b.wH[c]=-maxA;b.wV[c]*=0.3}}
@@ -2410,9 +2454,9 @@ function initButtons(){
   document.getElementById('btn-back-settings').addEventListener('click',function(){saveSettings();showScreen('screen-start')});
   document.getElementById('btn-debug-main').addEventListener('click',function(){settings.debug=!settings.debug;applyDebugMode();var db=document.getElementById('btn-debug-main');if(db)db.textContent='DEBUG: '+(settings.debug?'ON':'OFF')});
   document.getElementById('btn-info').addEventListener('click',function(){renderPowerupInfo();renderOrbInfo();showScreen('screen-info');document.getElementById('btn-tab-powerups').classList.add('active');document.getElementById('btn-tab-orbs').classList.remove('active');document.getElementById('info-powerups-panel').style.display='';document.getElementById('info-orbs-panel').style.display='none'});
-  document.getElementById('btn-back-info').addEventListener('click',function(){showScreen('screen-start')});
-  document.getElementById('btn-tab-powerups').addEventListener('click',function(){document.getElementById('btn-tab-powerups').classList.add('active');document.getElementById('btn-tab-orbs').classList.remove('active');document.getElementById('info-powerups-panel').style.display='';document.getElementById('info-orbs-panel').style.display='none'});
-  document.getElementById('btn-tab-orbs').addEventListener('click',function(){document.getElementById('btn-tab-orbs').classList.add('active');document.getElementById('btn-tab-powerups').classList.remove('active');document.getElementById('info-orbs-panel').style.display='';document.getElementById('info-powerups-panel').style.display='none'});
+  document.getElementById('btn-back-info').addEventListener('click',function(){stopInfoOrbPreview();showScreen('screen-start')});
+  document.getElementById('btn-tab-powerups').addEventListener('click',function(){stopInfoOrbPreview();document.getElementById('btn-tab-powerups').classList.add('active');document.getElementById('btn-tab-orbs').classList.remove('active');document.getElementById('info-powerups-panel').style.display='';document.getElementById('info-orbs-panel').style.display='none'});
+  document.getElementById('btn-tab-orbs').addEventListener('click',function(){document.getElementById('btn-tab-orbs').classList.add('active');document.getElementById('btn-tab-powerups').classList.remove('active');document.getElementById('info-orbs-panel').style.display='';document.getElementById('info-powerups-panel').style.display='none';startInfoOrbPreview()});
   ['small','normal','large'].forEach(function(s){var el=document.getElementById('size-'+s);if(el)el.addEventListener('click',function(){settings.ballSize=s;applySettingsUI();saveSettings()})});
   ['fire','lava','plasma','ice'].forEach(function(s){var el=document.getElementById('trail-'+s);if(el)el.addEventListener('click',function(){settings.ballTrail=s;applySettingsUI();saveSettings()})});
   ['short','normal','long'].forEach(function(s){var el=document.getElementById('tlen-'+s);if(el)el.addEventListener('click',function(){settings.trailLength=s;applySettingsUI();saveSettings()})});
