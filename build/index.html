@@ -157,6 +157,9 @@ body.debug-mode #debug-panel{display:flex}
     <div class="settings-row"><span class="settings-label" data-i18n="music">Music</span><button class="toggle-btn active" id="btn-music">ON</button></div>
     <div class="settings-row"><span class="settings-label" data-i18n="sound">Sound</span><button class="toggle-btn active" id="btn-sfx">ON</button></div>
     <div class="settings-row"><span class="settings-label" data-i18n="visual">Visual FX</span><button class="toggle-btn active" id="btn-visual">ON</button></div>
+    <div class="settings-row"><span class="settings-label" data-i18n="renderer">RENDERER</span>
+      <div style="display:flex;gap:8px"><button class="lang-btn active" id="rnd-webgl">WebGL2</button><button class="lang-btn" id="rnd-canvas">Canvas2D</button></div>
+    </div>
     <div class="settings-row"><span class="settings-label" data-i18n="orb_size">ORB SIZE</span>
       <div style="display:flex;gap:8px"><button class="lang-btn" id="size-small">S</button><button class="lang-btn active" id="size-normal">M</button><button class="lang-btn" id="size-large">L</button></div>
     </div>
@@ -391,7 +394,7 @@ function applyI18n(){
   document.querySelectorAll('.toggle-btn').forEach(function(btn){btn.textContent=btn.classList.contains('active')?t('on'):t('off')});
 }
 
-var settings={language:'en',musicOn:true,sfxOn:true,visualFX:true,difficulty:'normal',debug:false,maxLevel:0,ballSize:'normal',ballTrail:'lava',trailLength:'normal',descent:false,powerupRate:'normal',gameMode:'classic'};
+var settings={language:'en',musicOn:true,sfxOn:true,visualFX:true,difficulty:'normal',debug:false,maxLevel:0,ballSize:'normal',ballTrail:'lava',trailLength:'normal',descent:false,powerupRate:'normal',gameMode:'classic',renderer:'webgl'};
 
 function loadSettings(){try{var r=localStorage.getItem(CFG.STORAGE_KEY+'-settings');if(r)Object.assign(settings,JSON.parse(r))}catch(e){}}
 function saveSettings(){try{localStorage.setItem(CFG.STORAGE_KEY+'-settings',JSON.stringify(settings))}catch(e){}}
@@ -418,6 +421,8 @@ function applySettingsUI(){
   if(ps){ps.classList.toggle('active',settings.sfxOn);ps.textContent=settings.sfxOn?t('on'):t('off')}
   if(pv){pv.classList.toggle('active',settings.visualFX);pv.textContent=settings.visualFX?t('on'):t('off')}
   ['easy','normal','hard'].forEach(function(d){var e=document.getElementById('p-diff-'+d);if(e)e.classList.toggle('active',settings.difficulty===d)});
+  var rndW=document.getElementById('rnd-webgl'),rndC=document.getElementById('rnd-canvas');
+  if(rndW&&rndC){var isC=settings.renderer==='canvas2d';rndW.classList.toggle('active',!isC);rndC.classList.toggle('active',isC)}
 }
 
 var gameState={running:false,paused:false,lives:CFG.INIT_LIVES,score:0,combo:0,comboTimer:0,level:0,totalScore:0,levelStartScore:0,blocks:[],balls:[],paddle:null,particles:[],powerups:[],lasers:[],activeEffects:{expand:0,shrink:0,sticky:0,laser:0,slow:0,fireball:0,iceball:0,goldball:0,lavaball:0,echo:0,gravity:0},shake:0,flashAlpha:0,flashColor:'#ffffff',_nameCallback:null,debugMode:false,botEnabled:false,showHitboxes:false,floatTexts:[],shieldActive:false,gameMode:'classic',tAttackTimer:0,_procLevels:{}};
@@ -1758,6 +1763,7 @@ function glMakeQuad(corner){
 }
 
 function initGL(){
+  if(settings.renderer==='canvas2d'){console.info('[renderer] forced Canvas2D via settings, skipping WebGL2 init');return}
   glCanvas=document.getElementById('gl-canvas');if(!glCanvas)return;
   gl=glCanvas.getContext('webgl2',{alpha:true,premultipliedAlpha:false,antialias:false,preserveDrawingBuffer:false});
   if(!gl){console.warn('WebGL2 not available');return}
@@ -2755,6 +2761,7 @@ function initButtons(){
   document.getElementById('btn-visual').addEventListener('click',function(){settings.visualFX=!settings.visualFX;applySettingsUI();saveSettings()});
   document.getElementById('btn-debug').addEventListener('click',function(){settings.debug=!settings.debug;applyDebugMode()});
   document.getElementById('btn-descent').addEventListener('click',function(){settings.descent=!settings.descent;applySettingsUI();saveSettings()});
+  ['webgl','canvas'].forEach(function(r){var btn=document.getElementById('rnd-'+r);if(btn)btn.addEventListener('click',function(){var next=r==='webgl'?'webgl':'canvas2d';if(settings.renderer===next)return;settings.renderer=next;saveSettings();sessionStorage.setItem('_arkanoid_restoreScreen','screen-settings');location.reload()})});
   ['easy','normal','hard'].forEach(function(d){document.getElementById('diff-'+d).addEventListener('click',function(){settings.difficulty=d;applySettingsUI();saveSettings()})});
   ['few','normal','many'].forEach(function(r){var el=document.getElementById('pu-'+r);if(el)el.addEventListener('click',function(){settings.powerupRate=r;applySettingsUI();saveSettings()})});
   ['en','ru'].forEach(function(l){document.getElementById('lang-'+l).addEventListener('click',function(){settings.language=l;applyI18n();applySettingsUI();saveSettings()})});
@@ -2936,7 +2943,7 @@ function runTests(){
 // === INIT ===================================================
 // ============================================================
 document.addEventListener('DOMContentLoaded',function(){
-  loadSettings();initCanvas();initInput();initButtons();applyI18n();applySettingsUI();applyDebugMode();showScreen('screen-start');updateHUD();
+  loadSettings();initCanvas();initInput();initButtons();applyI18n();applySettingsUI();applyDebugMode();var _restore=null;try{_restore=sessionStorage.getItem('_arkanoid_restoreScreen');if(_restore)sessionStorage.removeItem('_arkanoid_restoreScreen')}catch(e){}showScreen(_restore||'screen-start');updateHUD();
   setTimeout(function(){recalcLayout();runTests()},100);
 });
 window.addEventListener('resize',resizeCanvas);

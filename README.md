@@ -138,11 +138,11 @@ _test_runner.js     — Node.js mock DOM + запуск тестов
 
 Инструменты из той же "лаборатории":
 
-- [**lava-orb**](http://192.168.1.130:3000/androman/lava-orb) — npm-библиотека температурно-реактивного орба для `<input type=range>`
-- [**liquid-orb-editor**](http://192.168.1.130:3000/androman/liquid-orb-editor) — интерактивный редактор жидкой физики
-- [**fire-particle-editor**](http://192.168.1.130:3000/androman/fire-particle-editor) — редактор огненных частиц (пресеты Fire/Ice/Lava/Plasma хвоста — оттуда)
-- [**shared-backgrounds**](http://192.168.1.130:3000/androman/shared-backgrounds) — WebGL2 библиотека фонов для игр/опросников
-- [**orb-2048**](http://192.168.1.130:3000/androman/orb-2048) — вторая игра на жидких орбах (головоломка 2048)
+- [**lava-orb**](https://github.com/andromanpro/lava-orb) — npm-библиотека температурно-реактивного орба для `<input type=range>`
+- [**liquid-orb-editor**](https://github.com/andromanpro/liquid-orb-editor) — интерактивный редактор жидкой физики
+- [**fire-particle-editor**](https://github.com/andromanpro/fire-particle-editor) — редактор огненных частиц (пресеты Fire/Ice/Lava/Plasma хвоста — оттуда)
+- [**shared-backgrounds**](https://github.com/andromanpro/shared-backgrounds) — WebGL2 библиотека фонов для игр/опросников
+- [**orb-2048**](https://github.com/andromanpro/orb-2048) — вторая игра на жидких орбах (головоломка 2048)
 
 ---
 
