@@ -102,3 +102,23 @@ _test_runner.js     — Node.js mock DOM + запуск тестов
 Все фазы разработки: скелет → поведение блоков → музыка → WebGL2 рендерер → физика волн → визуальный polish.
 
 Полный лог изменений: [CHANGELOG.md](CHANGELOG.md)
+
+Подробные девлоги отдельных версий: [devlog-v1.7.1.md](devlog-v1.7.1.md), [devlog-v1.8.0.md](devlog-v1.8.0.md).
+
+---
+
+## Связанные проекты
+
+Инструменты из той же "лаборатории":
+
+- [**lava-orb**](http://192.168.1.130:3000/androman/lava-orb) — npm-библиотека температурно-реактивного орба для `<input type=range>`
+- [**liquid-orb-editor**](http://192.168.1.130:3000/androman/liquid-orb-editor) — интерактивный редактор жидкой физики
+- [**fire-particle-editor**](http://192.168.1.130:3000/androman/fire-particle-editor) — редактор огненных частиц (пресеты Fire/Ice/Lava/Plasma хвоста — оттуда)
+- [**shared-backgrounds**](http://192.168.1.130:3000/androman/shared-backgrounds) — WebGL2 библиотека фонов для игр/опросников
+- [**orb-2048**](http://192.168.1.130:3000/androman/orb-2048) — вторая игра на жидких орбах (головоломка 2048)
+
+---
+
+## Лицензия
+
+[MIT](LICENSE) © 2026 andromanpro
